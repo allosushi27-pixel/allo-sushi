@@ -1030,23 +1030,36 @@ function ca_parseNum(v){
 }
 
 /* ---------------- État ---------------- */
-let ca_allSessions = {}; // { 'YYYY-MM-DD': {debutCaisse, encaissements:[], decaissements:[], ...} }
+let ca_allSessions = {};
 let ca_currentTab = 'caisse';
 let ca_workingDate = todayISO();
 let ca_session = ca_blankSession(ca_workingDate);
 
-function ca_sessionMontantE(s){
-  const b = ca_sumLines(s.encaissements);
-  const d = ca_sumLines(s.decaissements);
-  const c = ca_parseNum(s.debutCaisse) + b;
-  return c - d;
+/* ---------------- Calculs ---------------- */
+function ca_sumLines(lines){ return (lines||[]).reduce((s,l)=>s+ca_parseNum(l.montant),0); }
+function ca_totalEntreesDiverses(s){ return ca_sumLines(s.entrees); }
+function ca_partEspecesErp(s){ return ca_parseNum(s.totalVentesErp) - ca_sumLines(s.virements) - ca_sumLines(s.enAttente); }
+function ca_montantDisponible(s){ return ca_parseNum(s.debutCaisse) + ca_totalEntreesDiverses(s) + ca_partEspecesErp(s); }
+function ca_totalRetraits(s){ return ca_sumLines(s.retraitsGerant) + ca_sumLines(s.retraitsDivers); }
+function ca_montantTheorique(s){ return ca_montantDisponible(s) - ca_totalRetraits(s); }
+function ca_ecart(s){
+  if(s.montantCompte===undefined || s.montantCompte===null || s.montantCompte==='') return null;
+  return ca_parseNum(s.montantCompte) - ca_montantTheorique(s);
 }
+function ca_montantPourLendemain(s){
+  if(s.montantCompte!==undefined && s.montantCompte!==null && s.montantCompte!==''){
+    return ca_parseNum(s.montantCompte);
+  }
+  return ca_montantTheorique(s);
+}
+
 function ca_blankSession(date){
   const prev = ca_allSessions[prevDateStr(date)];
+  const base = { date, entrees: [], totalVentesErp: '', virements: [], enAttente: [], retraitsGerant: [], retraitsDivers: [], montantCompte: '', noteValidation: '' };
   if(prev){
-    return { date, debutCaisse: ca_sessionMontantE(prev), debutCaisseAuto: true, encaissements: [], decaissements: [] };
+    return { ...base, debutCaisse: ca_montantPourLendemain(prev), debutCaisseAuto: true };
   }
-  return { date, debutCaisse: '', debutCaisseAuto: false, encaissements: [], decaissements: [] };
+  return { ...base, debutCaisse: '', debutCaisseAuto: false };
 }
 function ca_loadSessionForDate(date){
   ca_workingDate = date;
@@ -1059,13 +1072,10 @@ ca_caisseCol.onSnapshot((snap)=>{
   const next = {};
   snap.forEach(doc=>{ next[doc.id] = doc.data(); });
   ca_allSessions = next;
-  // Si la ca_session en cours n'a pas encore été sauvegardée pour sa date, et que le début de caisse
-  // n'a pas été saisi manuellement, on tente de le remplir automatiquement depuis la clôture de la veille
-  // (utile si les données d'hier arrivent juste après le chargement de l'app).
   if(!ca_allSessions[ca_workingDate] && !ca_session.debutCaisseManuel){
     const prev = ca_allSessions[prevDateStr(ca_workingDate)];
     if(prev){
-      ca_session.debutCaisse = ca_sessionMontantE(prev);
+      ca_session.debutCaisse = ca_montantPourLendemain(prev);
       ca_session.debutCaisseAuto = true;
     }
   }
@@ -1093,13 +1103,6 @@ async function ca_deleteSession(date){
   if(!confirm('Supprimer définitivement la clôture du '+fmtDateShort(date)+' ?')) return;
   try{ await ca_caisseCol.doc(date).delete(); }catch(e){ console.warn(e); }
 }
-
-/* ---------------- Calculs ---------------- */
-function ca_sumLines(lines){ return (lines||[]).reduce((s,l)=>s+ca_parseNum(l.montant),0); }
-function ca_totalB(){ return ca_sumLines(ca_session.encaissements); }
-function ca_totalD(){ return ca_sumLines(ca_session.decaissements); }
-function ca_montantC(){ return ca_parseNum(ca_session.debutCaisse) + ca_totalB(); }
-function ca_montantE(){ return ca_montantC() - ca_totalD(); }
 
 /* ---------------- Render ---------------- */
 function ca_render(){
@@ -1137,6 +1140,7 @@ function ca_renderTabs(){
 
 function ca_renderCaisseTab(){
   const existing = ca_allSessions[ca_workingDate];
+  const ecart = ca_ecart(ca_session);
   return `
     <div class="ticket">
       <div class="field">
@@ -1147,7 +1151,7 @@ function ca_renderCaisseTab(){
     </div>
 
     <div class="ticket">
-      <div class="step-label"><div class="step-badge">A</div><div class="step-title">Début de caisse</div></div>
+      <div class="step-label"><div class="step-badge">A</div><div class="step-title">Début de caisse (= clôture de la veille)</div></div>
       <div class="field">
         <label>Montant (DA)</label>
         <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="debut-input" value="${ca_session.debutCaisse}" oninput="ca_session.debutCaisse=this.value;ca_session.debutCaisseAuto=false;ca_session.debutCaisseManuel=true;ca_render()" placeholder="0" />
@@ -1156,31 +1160,77 @@ function ca_renderCaisseTab(){
     </div>
 
     <div class="ticket">
-      <div class="step-label"><div class="step-badge">B</div><div class="step-title">Encaissements</div></div>
-      ${ca_linesEditor(ca_session.encaissements, 'encaissements', 'Ex. Espèces, Carte, Autre')}
-      <button class="btn small ghost" onclick="ca_addLine('encaissements')">+ Ajouter un encaissement</button>
-      <div class="subtotal"><span>Total encaissements</span><span class="mono">${ca_fmtMoney(ca_totalB())}</span></div>
+      <div class="step-label"><div class="step-badge">B</div><div class="step-title">Entrées de caisse (divers)</div></div>
+      <div style="font-size:11.5px;color:var(--ink-muted);margin-bottom:8px;">Ex. monnaie apportée, vente d'huile… — tout ajout d'espèces hors ventes ERP.</div>
+      ${ca_linesEditor(ca_session.entrees, 'entrees', 'Description (ex. monnaie, vente huile…)')}
+      <button class="btn small ghost" onclick="ca_addLine('entrees')">+ Ajouter une entrée</button>
+      <div class="subtotal"><span>Total entrées diverses</span><span class="mono">${ca_fmtMoney(ca_totalEntreesDiverses(ca_session))}</span></div>
+    </div>
+
+    <div class="ticket">
+      <div class="step-label"><div class="step-badge">C</div><div class="step-title">Total des ventes ERP</div></div>
+      <div style="font-size:11.5px;color:var(--ink-muted);margin-bottom:8px;">Toutes les commandes, tous modes de paiement confondus (le chiffre affiché par l'ERP).</div>
+      <div class="field"><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="erp-input" value="${ca_session.totalVentesErp}" oninput="ca_session.totalVentesErp=this.value;ca_render()" placeholder="0" /></div>
+    </div>
+
+    <div class="ticket">
+      <div class="step-label"><div class="step-badge">D</div><div class="step-title">Ventes payées par virement</div></div>
+      ${ca_linesEditor(ca_session.virements, 'virements', 'Note (ex. client, référence)')}
+      <button class="btn small ghost" onclick="ca_addLine('virements')">+ Ajouter un virement</button>
+      <div class="subtotal"><span>Total virements</span><span class="mono">${ca_fmtMoney(ca_sumLines(ca_session.virements))}</span></div>
+      <div style="margin-top:8px;padding:8px 10px;background:var(--rust-bg);border-radius:6px;font-size:11.5px;color:var(--rust);font-weight:600;">⚠ Ces ventes devront être validées dans l'ERP.</div>
+    </div>
+
+    <div class="ticket">
+      <div class="step-label"><div class="step-badge">E</div><div class="step-title">Ventes en attente (validées, non payées)</div></div>
+      ${ca_linesEditor(ca_session.enAttente, 'enAttente', 'Note (ex. client, raison)')}
+      <button class="btn small ghost" onclick="ca_addLine('enAttente')">+ Ajouter une vente en attente</button>
+      <div class="subtotal"><span>Total en attente</span><span class="mono">${ca_fmtMoney(ca_sumLines(ca_session.enAttente))}</span></div>
+    </div>
+
+    <div class="ticket" style="background:var(--paper);">
+      <div class="subtotal"><span>Part espèces des ventes ERP (C − D − E)</span><span class="mono" style="font-weight:700;">${ca_fmtMoney(ca_partEspecesErp(ca_session))}</span></div>
     </div>
 
     <div class="result-box prelim">
-      <div>
-        <div class="label">C — Montant de clôture prévisionnel (A + B)</div>
-      </div>
-      <div class="value">${ca_fmtMoney(ca_montantC())}</div>
+      <div><div class="label">F — Montant disponible dans la caisse (A + B + part espèces)</div></div>
+      <div class="value">${ca_fmtMoney(ca_montantDisponible(ca_session))}</div>
     </div>
 
     <div class="ticket" style="margin-top:14px;">
-      <div class="step-label"><div class="step-badge">D</div><div class="step-title">Décaissements</div></div>
-      ${ca_linesEditor(ca_session.decaissements, 'decaissements', 'Motif (ex. achat, fournisseur…)')}
-      <button class="btn small ghost" onclick="ca_addLine('decaissements')">+ Ajouter un décaissement</button>
-      <div class="subtotal"><span>Total décaissements</span><span class="mono">${ca_fmtMoney(ca_totalD())}</span></div>
+      <div class="step-label"><div class="step-badge">G</div><div class="step-title">Retraits de la caisse</div></div>
+      <div class="form-section">
+        <div class="section-label">Retrait par le Gérant</div>
+        ${ca_linesEditor(ca_session.retraitsGerant, 'retraitsGerant', 'Note (obligatoire)')}
+        <button class="btn small ghost" onclick="ca_addLine('retraitsGerant')">+ Ajouter un retrait gérant</button>
+        <div class="subtotal"><span>Total retraits gérant</span><span class="mono">${ca_fmtMoney(ca_sumLines(ca_session.retraitsGerant))}</span></div>
+      </div>
+      <div class="form-section">
+        <div class="section-label">Retrait pour divers paiements</div>
+        ${ca_linesEditor(ca_session.retraitsDivers, 'retraitsDivers', 'Motif (ex. achat, fournisseur…)')}
+        <button class="btn small ghost" onclick="ca_addLine('retraitsDivers')">+ Ajouter un retrait divers</button>
+        <div class="subtotal"><span>Total retraits divers</span><span class="mono">${ca_fmtMoney(ca_sumLines(ca_session.retraitsDivers))}</span></div>
+      </div>
+      <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Le gérant peut être sollicité plusieurs fois dans la journée — ajoute une ligne à chaque fois.</div>
+    </div>
+
+    <div class="result-box prelim">
+      <div><div class="label">Montant théorique de clôture (F − retraits)</div></div>
+      <div class="value">${ca_fmtMoney(ca_montantTheorique(ca_session))}</div>
+    </div>
+
+    <div class="ticket" style="margin-top:14px;">
+      <div class="step-label"><div class="step-badge">✓</div><div class="step-title">Validation (comptage du liquide)</div></div>
+      <div class="grid grid-2">
+        <div class="field"><label>Montant compté (comptage réel)</label><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" id="compte-input" value="${ca_session.montantCompte}" oninput="ca_session.montantCompte=this.value;ca_render()" placeholder="Si vous comptez le liquide" /></div>
+        <div class="field"><label>Note (optionnel)</label><input type="text" id="note-validation-input" value="${esc(ca_session.noteValidation||'')}" oninput="ca_session.noteValidation=this.value" placeholder="Remarques" /></div>
+      </div>
+      ${ecart!==null ? `<div style="margin-top:10px;font-size:13px;font-weight:700;color:${Math.abs(ecart)<0.01?'var(--moss)':'var(--rust)'};">Écart : ${ecart>0?'+':''}${ca_fmtMoney(ecart)}</div>` : ''}
     </div>
 
     <div class="result-box final">
-      <div>
-        <div class="label">E — Montant de clôture (C − D)</div>
-      </div>
-      <div class="value">${ca_fmtMoney(ca_montantE())}</div>
+      <div><div class="label">Montant retenu pour demain</div></div>
+      <div class="value">${ca_fmtMoney(ca_montantPourLendemain(ca_session))}</div>
     </div>
 
     <div class="actions-row">
@@ -1223,17 +1273,15 @@ function ca_renderHistoriqueTab(){
   }
   return dates.map(date=>{
     const s = ca_allSessions[date];
-    const b = ca_sumLines(s.encaissements);
-    const d = ca_sumLines(s.decaissements);
-    const c = ca_parseNum(s.debutCaisse) + b;
-    const e = c - d;
+    const theorique = ca_montantTheorique(s);
+    const ecart = ca_ecart(s);
     return `<div class="hist-row" onclick="ca_setTab('caisse');ca_loadSessionForDate('${date}')">
       <div>
         <div class="d">${fmtDateShort(date)}</div>
-        <div class="s">Début : ${ca_fmtMoney(s.debutCaisse)} · Encaissements : ${ca_fmtMoney(b)} · Décaissements : ${ca_fmtMoney(d)}${s.enregistreParEn?' · par '+esc(s.enregistreParEn):''}</div>
+        <div class="s">Début : ${ca_fmtMoney(s.debutCaisse)} · ERP : ${ca_fmtMoney(s.totalVentesErp)} · Virement : ${ca_fmtMoney(ca_sumLines(s.virements))} · Attente : ${ca_fmtMoney(ca_sumLines(s.enAttente))} · Retraits : ${ca_fmtMoney(ca_totalRetraits(s))}${ecart!==null?` · Écart : ${ecart>0?'+':''}${ca_fmtMoney(ecart)}`:''}${s.enregistreParEn?' · par '+esc(s.enregistreParEn):''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <div class="e">${ca_fmtMoney(e)}</div>
+        <div class="e">${ca_fmtMoney(theorique)}</div>
         <button class="x-btn" style="background:none;border:none;color:var(--ink-muted);font-size:15px;" onclick="event.stopPropagation();ca_deleteSession('${date}')">🗑</button>
       </div>
     </div>`;
