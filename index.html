@@ -1053,6 +1053,24 @@ function ca_montantPourLendemain(s){
   return ca_montantTheorique(s);
 }
 
+function ca_normalizeSession(s, date){
+  return {
+    date: date,
+    debutCaisse: s.debutCaisse!==undefined ? s.debutCaisse : '',
+    debutCaisseAuto: !!s.debutCaisseAuto,
+    debutCaisseManuel: !!s.debutCaisseManuel,
+    entrees: Array.isArray(s.entrees) ? s.entrees : [],
+    totalVentesErp: s.totalVentesErp!==undefined ? s.totalVentesErp : '',
+    virements: Array.isArray(s.virements) ? s.virements : [],
+    enAttente: Array.isArray(s.enAttente) ? s.enAttente : [],
+    retraitsGerant: Array.isArray(s.retraitsGerant) ? s.retraitsGerant : [],
+    retraitsDivers: Array.isArray(s.retraitsDivers) ? s.retraitsDivers : [],
+    montantCompte: s.montantCompte!==undefined ? s.montantCompte : '',
+    noteValidation: s.noteValidation!==undefined ? s.noteValidation : '',
+    enregistreParEn: s.enregistreParEn,
+    enregistreLe: s.enregistreLe,
+  };
+}
 function ca_blankSession(date){
   const prev = ca_allSessions[prevDateStr(date)];
   const base = { date, entrees: [], totalVentesErp: '', virements: [], enAttente: [], retraitsGerant: [], retraitsDivers: [], montantCompte: '', noteValidation: '' };
@@ -1063,7 +1081,7 @@ function ca_blankSession(date){
 }
 function ca_loadSessionForDate(date){
   ca_workingDate = date;
-  ca_session = ca_allSessions[date] ? JSON.parse(JSON.stringify(ca_allSessions[date])) : ca_blankSession(date);
+  ca_session = ca_allSessions[date] ? ca_normalizeSession(ca_allSessions[date], date) : ca_blankSession(date);
   ca_render();
 }
 
@@ -1253,15 +1271,18 @@ function ca_linesEditor(lines, key, placeholder){
   `).join('');
 }
 function ca_addLine(key){
+  if(!Array.isArray(ca_session[key])) ca_session[key] = [];
   ca_session[key].push({ id: uid(), montant: '', libelle: '' });
   ca_render();
 }
 function ca_updateLine(key, id, field, value){
+  if(!Array.isArray(ca_session[key])) ca_session[key] = [];
   const line = ca_session[key].find(l=>l.id===id);
   if(line) line[field] = value;
   ca_render();
 }
 function ca_removeLine(key, id){
+  if(!Array.isArray(ca_session[key])) ca_session[key] = [];
   ca_session[key] = ca_session[key].filter(l=>l.id!==id);
   ca_render();
 }
