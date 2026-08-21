@@ -1365,6 +1365,7 @@ let dp_mouvements = [];
 let dp_pointages = [];
 let dp_currentTab = 'tableau';
 let dp_typeFilter = 'Tous';
+let dp_dateFilter = '';
 let dp_showMouvForm = false;
 let dp_formType = 'Achat';
 let dp_showPointageForm = false;
@@ -1510,7 +1511,8 @@ function dp_renderTableauTab(){
 
 function dp_renderMouvementsTab(){
   const solde = dp_computeSolde(dp_mouvements);
-  const filtered = dp_typeFilter==='Tous' ? dp_mouvements : dp_mouvements.filter(m=>m.type===dp_typeFilter);
+  const byType = dp_typeFilter==='Tous' ? dp_mouvements : dp_mouvements.filter(m=>m.type===dp_typeFilter);
+  const filtered = dp_dateFilter ? byType.filter(m=>m.date===dp_dateFilter) : byType;
   const sorted = filtered.slice().sort((a,b)=> a.date<b.date?1: a.date>b.date?-1: (a.creeLe<b.creeLe?1:-1));
 
   const soldeBox = `<div class="result-box ${solde>=0?'final':'prelim'}" style="margin-bottom:14px;">
@@ -1548,7 +1550,13 @@ function dp_renderMouvementsTab(){
     </div>
   ` : '';
 
-  const filterChips = `<h2 class="section">Mouvements déjà enregistrés</h2><div class="filter-row">
+  const filterChips = `<h2 class="section">Mouvements déjà enregistrés</h2>
+    <div class="ticket" style="padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+      <div class="field" style="flex:1;min-width:150px;margin:0;"><label>Filtrer par jour</label><input type="date" id="dp-date-filter" value="${dp_dateFilter}" onchange="dp_dateFilter=this.value;dp_render()" /></div>
+      ${dp_dateFilter ? `<button class="btn ghost small" onclick="dp_dateFilter='';dp_render()">✕ Effacer</button>` : ''}
+    </div>
+    ${dp_dateFilter ? `<div style="font-size:12px;color:var(--forest);margin-bottom:8px;">Affichage limité au ${fmtDateShort(dp_dateFilter)} — ${sorted.length} mouvement(s)</div>` : ''}
+    <div class="filter-row">
     <button class="filter-chip ${dp_typeFilter==='Tous'?'active':''}" style="${dp_typeFilter==='Tous'?'background:var(--forest);border-color:var(--forest);color:#fff;':''}" onclick="dp_typeFilter='Tous';dp_render()">Tous</button>
     ${DP_TYPES.map(t=>`<button class="filter-chip ${dp_typeFilter===t.id?'active':''}" style="${dp_typeFilter===t.id?`background:${t.color};border-color:${t.color};color:#fff;`:''}" onclick="dp_typeFilter='${t.id}';dp_render()">${esc(t.shortLabel)}</button>`).join('')}
   </div>`;
