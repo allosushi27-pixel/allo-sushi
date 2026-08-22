@@ -188,25 +188,101 @@
 .module-tabs button.active{color:var(--forest);border-bottom-color:var(--forest);}
 .module{display:none;}
 .module.active{display:block;}
+
+/* ===== Auth / Login ===== */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--paper);}
+.login-box{width:100%;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px 24px;box-shadow:0 2px 10px rgba(16,24,40,0.06);}
+.login-box .brand{font-family:'Manrope',sans-serif;font-weight:800;font-size:20px;text-align:center;margin-bottom:4px;}
+.login-box .sub{text-align:center;color:var(--ink-muted);font-size:12.5px;margin-bottom:22px;}
+.login-box .field{margin-bottom:14px;}
+.login-box .error{background:var(--rust-bg);color:var(--rust);font-size:12.5px;border-radius:8px;padding:8px 10px;margin-bottom:14px;display:none;}
+.login-box .error.show{display:block;}
+.login-box .hint{font-size:11px;color:var(--ink-muted);margin-top:14px;text-align:center;line-height:1.5;}
+.login-box button.btn{width:100%;justify-content:center;margin-top:4px;}
+
+/* ===== Header user area ===== */
+.user-chip{display:flex;align-items:center;gap:8px;}
+.user-chip .who{color:#fff;font-size:11.5px;text-align:right;}
+.user-chip .who .role{display:block;color:#9CA3AF;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;margin-top:1px;}
+.user-chip button{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;}
+
+/* ===== Home dashboard ===== */
+.home-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+@media(min-width:560px){.home-grid{grid-template-columns:repeat(3,1fr);}}
+.home-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 14px;text-align:center;cursor:pointer;transition:box-shadow .15s, transform .15s;}
+.home-card:hover{box-shadow:0 4px 14px rgba(16,24,40,0.08);transform:translateY(-1px);}
+.home-card .ic{font-size:26px;margin-bottom:8px;}
+.home-card .lbl{font-weight:700;font-size:13.5px;font-family:'Manrope',sans-serif;}
+.home-card .desc{font-size:11px;color:var(--ink-muted);margin-top:3px;}
+.home-card.locked{opacity:.4;cursor:not-allowed;}
+.home-card.admin{border-color:var(--forest);background:var(--forest-light);background:linear-gradient(180deg,#EEF2FF,#FFFFFF);}
+
+/* ===== User management ===== */
+.perm-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px solid var(--line);}
+.perm-row:last-child{border-bottom:none;}
+.switch{position:relative;display:inline-block;width:38px;height:22px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.switch .slider{position:absolute;cursor:pointer;inset:0;background:#D1D5DB;border-radius:999px;transition:.15s;}
+.switch .slider:before{content:"";position:absolute;height:16px;width:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;}
+.switch input:checked + .slider{background:var(--forest);}
+.switch input:checked + .slider:before{transform:translateX(16px);}
+.user-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px;}
+.user-card .uh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.user-card .uname{font-weight:700;font-size:14.5px;font-family:'Manrope',sans-serif;}
+.badge-admin{background:var(--bar-bg);color:var(--bar);border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-left:6px;}
 </style>
 </head>
 <body>
+
+<!-- ===================== ECRAN DE CONNEXION ===================== -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="brand display">ALLO SUSHI</div>
+    <div class="sub" id="login-sub">Connexion à l'espace de gestion</div>
+    <div class="error" id="login-error"></div>
+    <form id="login-form" onsubmit="return false;">
+      <div class="field">
+        <label>Nom d'utilisateur</label>
+        <input type="text" id="login-username" autocomplete="username" placeholder="ex: lila">
+      </div>
+      <div class="field">
+        <label>Mot de passe</label>
+        <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <div class="field" id="login-confirm-wrap" style="display:none;">
+        <label>Confirmer le mot de passe</label>
+        <input type="password" id="login-password-confirm" placeholder="••••••••">
+      </div>
+      <button class="btn" id="login-submit-btn" onclick="handleAuthSubmit()">Se connecter</button>
+    </form>
+    <div class="hint" id="login-hint"></div>
+  </div>
+</div>
+
+<!-- ===================== APPLICATION ===================== -->
+<div id="app-shell" style="display:none;">
 <header class="top">
   <div>
     <div class="title display">ALLO SUSHI</div>
     <div class="date mono" id="today-label"></div>
     <div class="mono" id="sync-label" style="font-size:10.5px;color:#9CA3AF;margin-top:3px;">Connexion…</div>
   </div>
-  <button id="user-label" onclick="askUserName(true)" class="mono" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);color:#fff;font-size:11.5px;padding:6px 12px;border-radius:6px;cursor:pointer;">Définir votre nom</button>
+  <div class="user-chip">
+    <div class="who" id="user-who"></div>
+    <button onclick="handleLogout()">Déconnexion</button>
+  </div>
 </header>
 
-<nav class="module-tabs" id="module-tabs">
-  <button class="active" onclick="showModule('stock')">Stock</button>
-  <button onclick="showModule('caisse')">Caisse</button>
-  <button onclick="showModule('depenses')">Dépenses</button>
-</nav>
+<nav class="module-tabs" id="module-tabs"></nav>
 
-<div id="module-stock" class="module active">
+<div id="module-home" class="module active">
+  <main style="max-width:760px;margin:0 auto;padding:18px 16px 40px;">
+    <h2 class="section" style="margin-top:4px;">Rubriques</h2>
+    <div class="home-grid" id="home-grid"></div>
+  </main>
+</div>
+
+<div id="module-stock" class="module">
   <div style="max-width:760px;margin:0 auto;padding:10px 16px 0;display:flex;justify-content:flex-end;">
     <button class="alert-badge" id="alert-badge" style="display:none" onclick="st_setTab('alerts')">
       🔔 <span id="alert-count">0</span> alerte(s)
@@ -226,7 +302,39 @@
   <main id="depenses-main"></main>
 </div>
 
+<div id="module-users" class="module">
+  <main style="max-width:760px;margin:0 auto;padding:18px 16px 40px;">
+    <h2 class="section" style="margin-top:4px;">Nouvel utilisateur</h2>
+    <div class="ticket">
+      <div class="grid grid-2" style="margin-bottom:10px;">
+        <div class="field">
+          <label>Nom d'utilisateur</label>
+          <input type="text" id="nu-username" placeholder="ex: karim">
+        </div>
+        <div class="field">
+          <label>Mot de passe</label>
+          <input type="password" id="nu-password" placeholder="••••••••">
+        </div>
+      </div>
+      <div class="perm-row">
+        <span>Administrateur (accès total + gestion des utilisateurs)</span>
+        <label class="switch"><input type="checkbox" id="nu-admin" onchange="uu_toggleAdminFields()"><span class="slider"></span></label>
+      </div>
+      <div id="nu-perm-detail">
+        <div class="perm-row"><span>Accès Stock</span><label class="switch"><input type="checkbox" id="nu-perm-stock" checked><span class="slider"></span></label></div>
+        <div class="perm-row"><span>Accès Caisse</span><label class="switch"><input type="checkbox" id="nu-perm-caisse" checked><span class="slider"></span></label></div>
+        <div class="perm-row"><span>Accès Dépenses</span><label class="switch"><input type="checkbox" id="nu-perm-depenses" checked><span class="slider"></span></label></div>
+      </div>
+      <button class="btn moss" style="margin-top:14px;" onclick="uu_createUser()">➕ Créer l'utilisateur</button>
+    </div>
+
+    <h2 class="section">Utilisateurs existants</h2>
+    <div id="users-list"></div>
+  </main>
+</div>
+
 <footer class="foot">Données synchronisées en temps réel entre tous les appareils connectés à cette app.</footer>
+</div><!-- /app-shell -->
 
 <script>
 /* ==================== SOCLE COMMUN (partagé par les 3 modules) ==================== */
@@ -242,18 +350,279 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 const USER_KEY = 'allosushi-user';
-let currentUser = localStorage.getItem(USER_KEY) || '';
-function askUserName(force){
-  const proposed = prompt(force ? "Changer d'utilisateur — entrez votre prénom :" : "Qui êtes-vous ? Entrez votre prénom :", currentUser || '');
-  if(proposed && proposed.trim()){
-    currentUser = proposed.trim();
-    localStorage.setItem(USER_KEY, currentUser);
-    renderUserLabel();
+let currentUser = '';
+function askUserName(){ /* obsolète : l'utilisateur est désormais défini via la connexion */ }
+
+/* ==================== AUTHENTIFICATION & AUTORISATIONS ==================== */
+const appUsersCol = db.collection('app_users');
+const SESSION_KEY = 'allosushi-session';
+const MODULE_DEFS = [
+  { key:'stock',    label:'Stock',     ic:'📦', desc:'Articles, entrées, sorties' },
+  { key:'caisse',   label:'Caisse',    ic:'💰', desc:'Sessions de caisse' },
+  { key:'depenses', label:'Dépenses',  ic:'🧾', desc:'Dépenses & pointages' }
+];
+let session = null; // { username, isAdmin, permissions:{stock,caisse,depenses} }
+let usersCache = [];
+let usersSetupMode = false;
+
+function hasAccess(moduleKey){
+  if(!session) return false;
+  if(session.isAdmin) return true;
+  return !!(session.permissions && session.permissions[moduleKey]);
+}
+
+function showAuthError(msg){
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function clearAuthError(){
+  document.getElementById('login-error').classList.remove('show');
+}
+
+async function initAuth(){
+  document.getElementById('sync-label').textContent = 'Connexion…';
+  let snap;
+  try{
+    snap = await appUsersCol.get();
+  }catch(e){
+    showAuthError("Impossible de contacter le serveur. Vérifiez votre connexion.");
+    return;
+  }
+  usersCache = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+
+  if(usersCache.length === 0){
+    // Premier lancement : on crée le compte administrateur
+    usersSetupMode = true;
+    document.getElementById('login-sub').textContent = "Créez votre compte administrateur";
+    document.getElementById('login-submit-btn').textContent = "Créer le compte administrateur";
+    document.getElementById('login-confirm-wrap').style.display = 'block';
+    document.getElementById('login-hint').textContent = "Ce compte aura accès à toutes les rubriques et pourra créer d'autres utilisateurs.";
+    return;
+  }
+
+  // Session déjà ouverte sur cet appareil ?
+  const saved = localStorage.getItem(SESSION_KEY);
+  if(saved){
+    try{
+      const s = JSON.parse(saved);
+      const match = usersCache.find(u=>u.id === s.username);
+      if(match){
+        applySession(match);
+        return;
+      }
+    }catch(e){}
+    localStorage.removeItem(SESSION_KEY);
   }
 }
-function renderUserLabel(){
-  const el = document.getElementById('user-label');
-  if(el) el.textContent = currentUser ? currentUser : 'Définir votre nom';
+
+function applySession(userDoc){
+  session = {
+    username: userDoc.id,
+    displayName: userDoc.username || userDoc.id,
+    isAdmin: !!userDoc.isAdmin,
+    permissions: userDoc.permissions || {}
+  };
+  currentUser = session.displayName;
+  localStorage.setItem(USER_KEY, currentUser);
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ username: session.username }));
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-shell').style.display = 'block';
+  renderUserChip();
+  buildModuleTabs();
+  showModule('home');
+  if(session.isAdmin) uu_subscribeUsers();
+}
+
+async function handleAuthSubmit(){
+  clearAuthError();
+  const uname = (document.getElementById('login-username').value || '').trim().toLowerCase();
+  const pwd = document.getElementById('login-password').value || '';
+  if(!uname || !pwd){ showAuthError("Entrez un nom d'utilisateur et un mot de passe."); return; }
+
+  if(usersSetupMode){
+    const confirm = document.getElementById('login-password-confirm').value || '';
+    if(pwd.length < 4){ showAuthError("Le mot de passe doit contenir au moins 4 caractères."); return; }
+    if(pwd !== confirm){ showAuthError("Les mots de passe ne correspondent pas."); return; }
+    const userDoc = {
+      username: uname,
+      password: pwd,
+      isAdmin: true,
+      permissions: { stock:true, caisse:true, depenses:true },
+      creeLe: new Date().toISOString()
+    };
+    try{
+      await appUsersCol.doc(uname).set(userDoc);
+    }catch(e){
+      showAuthError("Erreur lors de la création du compte. Réessayez.");
+      return;
+    }
+    usersCache = [{ id: uname, ...userDoc }];
+    usersSetupMode = false;
+    applySession({ id: uname, ...userDoc });
+    return;
+  }
+
+  const match = usersCache.find(u => u.id === uname);
+  if(!match || match.password !== pwd){
+    showAuthError("Nom d'utilisateur ou mot de passe incorrect.");
+    return;
+  }
+  applySession(match);
+}
+
+function handleLogout(){
+  if(!confirm('Se déconnecter ?')) return;
+  session = null;
+  currentUser = '';
+  localStorage.removeItem(SESSION_KEY);
+  document.getElementById('login-password').value = '';
+  document.getElementById('app-shell').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  initAuth();
+}
+
+function renderUserChip(){
+  const el = document.getElementById('user-who');
+  if(!el || !session) return;
+  el.innerHTML = `${esc(session.displayName)}<span class="role">${session.isAdmin ? 'Administrateur' : 'Employé'}</span>`;
+}
+
+/* ---- Onglets du haut, générés selon les autorisations ---- */
+function buildModuleTabs(){
+  const nav = document.getElementById('module-tabs');
+  let html = `<button data-mod="home" onclick="showModule('home')">🏠 Accueil</button>`;
+  MODULE_DEFS.forEach(m=>{
+    if(hasAccess(m.key)) html += `<button data-mod="${m.key}" onclick="showModule('${m.key}')">${m.ic} ${m.label}</button>`;
+  });
+  if(session && session.isAdmin) html += `<button data-mod="users" onclick="showModule('users')">👤 Utilisateurs</button>`;
+  nav.innerHTML = html;
+}
+
+function renderHome(){
+  const grid = document.getElementById('home-grid');
+  let html = '';
+  MODULE_DEFS.forEach(m=>{
+    if(hasAccess(m.key)){
+      html += `<div class="home-card" onclick="showModule('${m.key}')">
+        <div class="ic">${m.ic}</div>
+        <div class="lbl">${m.label}</div>
+        <div class="desc">${m.desc}</div>
+      </div>`;
+    }
+  });
+  if(session && session.isAdmin){
+    html += `<div class="home-card admin" onclick="showModule('users')">
+      <div class="ic">👤</div>
+      <div class="lbl">Utilisateurs</div>
+      <div class="desc">Comptes & autorisations</div>
+    </div>`;
+  }
+  if(!html) html = `<div class="empty-state">Aucune rubrique ne vous a été attribuée. Contactez votre administrateur.</div>`;
+  grid.innerHTML = html;
+}
+
+/* ---- Gestion des utilisateurs (admin) ---- */
+function uu_toggleAdminFields(){
+  document.getElementById('nu-perm-detail').style.opacity = document.getElementById('nu-admin').checked ? '0.4' : '1';
+}
+
+async function uu_createUser(){
+  const uname = (document.getElementById('nu-username').value || '').trim().toLowerCase();
+  const pwd = document.getElementById('nu-password').value || '';
+  if(!uname || !pwd){ alert("Entrez un nom d'utilisateur et un mot de passe."); return; }
+  if(pwd.length < 4){ alert("Le mot de passe doit contenir au moins 4 caractères."); return; }
+  if(usersCache.some(u=>u.id===uname)){ alert("Ce nom d'utilisateur existe déjà."); return; }
+  const isAdmin = document.getElementById('nu-admin').checked;
+  const userDoc = {
+    username: uname,
+    password: pwd,
+    isAdmin,
+    permissions: isAdmin ? { stock:true, caisse:true, depenses:true } : {
+      stock: document.getElementById('nu-perm-stock').checked,
+      caisse: document.getElementById('nu-perm-caisse').checked,
+      depenses: document.getElementById('nu-perm-depenses').checked
+    },
+    creeLe: new Date().toISOString(),
+    creePar: currentUser
+  };
+  await appUsersCol.doc(uname).set(userDoc);
+  document.getElementById('nu-username').value = '';
+  document.getElementById('nu-password').value = '';
+  document.getElementById('nu-admin').checked = false;
+  uu_toggleAdminFields();
+}
+
+async function uu_togglePerm(userId, key, checked){
+  await appUsersCol.doc(userId).set({ permissions: { [key]: checked } }, { merge:true });
+}
+async function uu_toggleAdmin(userId, checked){
+  const patch = { isAdmin: checked };
+  if(checked) patch.permissions = { stock:true, caisse:true, depenses:true };
+  await appUsersCol.doc(userId).set(patch, { merge:true });
+}
+async function uu_deleteUser(userId){
+  if(userId === session.username){ alert("Vous ne pouvez pas supprimer votre propre compte."); return; }
+  if(!confirm(`Supprimer l'utilisateur "${userId}" ?`)) return;
+  await appUsersCol.doc(userId).delete();
+}
+async function uu_resetPassword(userId){
+  const pwd = prompt(`Nouveau mot de passe pour "${userId}" :`);
+  if(!pwd) return;
+  if(pwd.length < 4){ alert("Le mot de passe doit contenir au moins 4 caractères."); return; }
+  await appUsersCol.doc(userId).set({ password: pwd }, { merge:true });
+  alert("Mot de passe mis à jour.");
+}
+
+let uu_unsub = null;
+function uu_subscribeUsers(){
+  if(uu_unsub) return;
+  uu_unsub = appUsersCol.onSnapshot(snap=>{
+    usersCache = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    uu_render();
+    // Si notre propre compte a été modifié (retrait admin, permissions), on met à jour la session
+    if(session){
+      const me = usersCache.find(u=>u.id===session.username);
+      if(me){
+        session.isAdmin = !!me.isAdmin;
+        session.permissions = me.permissions || {};
+        buildModuleTabs();
+        renderUserChip();
+        if(!session.isAdmin && document.getElementById('module-users').classList.contains('active')) showModule('home');
+      }
+    }
+  });
+}
+
+function uu_render(){
+  const el = document.getElementById('users-list');
+  if(!el) return;
+  el.innerHTML = usersCache.slice().sort((a,b)=>a.id.localeCompare(b.id)).map(u=>{
+    const perms = u.permissions || {};
+    const permRows = MODULE_DEFS.map(m=>`
+      <div class="perm-row">
+        <span>${m.ic} ${m.label}</span>
+        <label class="switch">
+          <input type="checkbox" ${perms[m.key]?'checked':''} ${u.isAdmin?'disabled':''}
+            onchange="uu_togglePerm('${u.id}','${m.key}',this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>`).join('');
+    return `<div class="user-card">
+      <div class="uh">
+        <div class="uname">${esc(u.username||u.id)}${u.isAdmin?'<span class="badge-admin">Admin</span>':''}</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn ghost small" onclick="uu_resetPassword('${u.id}')">🔑 Mot de passe</button>
+          <button class="btn rust small" onclick="uu_deleteUser('${u.id}')">🗑️</button>
+        </div>
+      </div>
+      <div class="perm-row">
+        <span>Administrateur</span>
+        <label class="switch"><input type="checkbox" ${u.isAdmin?'checked':''} onchange="uu_toggleAdmin('${u.id}',this.checked)"><span class="slider"></span></label>
+      </div>
+      ${permRows}
+    </div>`;
+  }).join('') || `<div class="empty-state">Aucun utilisateur.</div>`;
 }
 
 function esc(s){ return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -280,14 +649,18 @@ function fmtDateLong(iso){
   return d.toLocaleDateString('fr-FR',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
 }
 
-let activeModule = 'stock';
+let activeModule = 'home';
 function showModule(name){
+  if(name!=='home' && name!=='users' && !hasAccess(name)) name = 'home';
+  if(name==='users' && !(session && session.isAdmin)) name = 'home';
   activeModule = name;
   document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
   document.getElementById('module-'+name).classList.add('active');
-  document.querySelectorAll('#module-tabs button').forEach(b=>b.classList.remove('active'));
-  const idx = {stock:0, caisse:1, depenses:2}[name];
-  document.querySelectorAll('#module-tabs button')[idx].classList.add('active');
+  document.querySelectorAll('#module-tabs button').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('data-mod')===name);
+  });
+  if(name==='home') renderHome();
+  if(name==='users') uu_render();
 }
 
 document.getElementById('today-label').textContent =
@@ -1927,7 +2300,7 @@ function dp_parseNum(v){ if(v===null||v===undefined||v==='') return 0; const n =
 
 dp_render();
 
-renderUserLabel();
+initAuth();
 </script>
 </body>
 </html>
