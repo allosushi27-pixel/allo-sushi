@@ -1761,6 +1761,8 @@ let dp_dashDate = todayISO();
 let dp_dashCustomStart = todayISO();
 let dp_dashCustomEnd = todayISO();
 let dp_achatCalcMode = 'prix';
+let dp_editingMouvId = null;
+let dp_editPrefill = null;
 
 dp_mouvCol.onSnapshot((snap)=>{
   dp_mouvements = [];
@@ -1914,7 +1916,7 @@ function dp_renderMouvementsTab(){
 
   const dateBar = `<div class="ticket" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
     <div class="field" style="flex:1;min-width:150px;"><label>Date de saisie</label><input type="date" id="dp-working-date" value="${dp_workingDate}" onchange="dp_workingDate=this.value;dp_render()" /></div>
-    <button class="btn" onclick="dp_showMouvForm=!dp_showMouvForm;dp_render()">+ Mouvement</button>
+    <button class="btn" onclick="dp_editingMouvId=null;dp_editPrefill=null;dp_showMouvForm=!dp_showMouvForm;dp_render()">+ Mouvement</button>
   </div>`;
 
 
@@ -1971,10 +1973,11 @@ function dp_renderMouvementsTab(){
       return `<div class="movement-row">
         <div>
           <div style="font-weight:500;"><span class="chip" style="color:${meta.color};background:${meta.bg};margin-right:5px;">${esc(m.type)}</span>${detail}</div>
-          <div class="sub">${fmtDateShort(m.date)}${m.creePar?' · par '+esc(m.creePar):''}${m.pointe?' · ✓ pointé':''}</div>
+          <div class="sub">${fmtDateShort(m.date)}${m.creePar?' · par '+esc(m.creePar):''}${m.modifiePar?' · modifié par '+esc(m.modifiePar):''}${m.pointe?' · ✓ pointé':''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="mono" style="font-weight:600;color:${meta.color};">${meta.sign>0?'+':'−'}${dp_fmtMoney(m.montant)}</div>
+          ${session && session.isAdmin ? `<button class="x-btn" style="color:var(--forest);font-size:13px;" onclick="dp_openEditMouv('${m.id}')">✏️</button>` : ''}
           <button class="x-btn" onclick="dp_deleteMouvement('${m.id}')">✕</button>
         </div>
       </div>`;
@@ -1983,7 +1986,30 @@ function dp_renderMouvementsTab(){
   return soldeBox + dateBar + form + draftBox + filterChips + list;
 }
 
+function dp_openEditMouv(id){
+  if(!(session && session.isAdmin)){ alert("Seule l'administratrice peut modifier un mouvement déjà enregistré."); return; }
+  const m = dp_mouvements.find(x=>x.id===id);
+  if(!m) return;
+  dp_editingMouvId = id;
+  dp_editPrefill = m;
+  dp_formType = m.type;
+  dp_workingDate = m.date;
+  if(m.type==='Achat') dp_achatCalcMode = 'montant';
+  dp_showMouvForm = true;
+  dp_render();
+  const el = document.getElementById('dp-form');
+  if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+function dp_cancelEditMouv(){
+  dp_editingMouvId = null;
+  dp_editPrefill = null;
+  dp_showMouvForm = false;
+  dp_render();
+}
+
 function dp_renderMouvForm(){
+  const E = dp_editPrefill || {};
+  const isEditing = !!dp_editingMouvId;
   const articleDatalist = (st_state.articles||[]).filter(a=>a.achatGerant!==false).map(a=>`<option value="${esc(a.nom)}">`).join('');
   const hasEligibleArticles = (st_state.articles||[]).some(a=>a.achatGerant!==false);
   const employeeNames = [...new Set(dp_mouvements.filter(m=>m.estAvanceSalaire && m.employeNom).map(m=>m.employeNom))];
@@ -1994,7 +2020,8 @@ function dp_renderMouvForm(){
   const typesIn = DP_TYPES.filter(t=>t.sign>0);
   const typesOut = DP_TYPES.filter(t=>t.sign<0);
   return `
-    <div class="ticket" id="dp-form" style="padding:18px;">
+    <div class="ticket" id="dp-form" style="padding:18px;${isEditing?'border-color:var(--forest);':''}">
+      ${isEditing ? `<div style="font-size:12.5px;font-weight:700;color:var(--forest);margin-bottom:10px;">✏️ Modification du mouvement du ${fmtDateShort(E.date)}</div>` : ''}
       <div class="form-section">
         <div class="section-label"><span class="num">1</span>Type de mouvement</div>
         <div class="grid grid-2" style="gap:8px;margin-bottom:12px;">
@@ -2018,10 +2045,10 @@ function dp_renderMouvForm(){
           <div class="grid grid-2">
             <div class="field" style="grid-column:1/-1;"><label>Article (liste Stock — comptabilisés uniquement)</label>
               ${hasEligibleArticles
-                ? `<input type="text" id="dp-article" list="dp-article-datalist" placeholder="Tapez pour rechercher…" /><datalist id="dp-article-datalist">${articleDatalist}</datalist>`
+                ? `<input type="text" id="dp-article" list="dp-article-datalist" placeholder="Tapez pour rechercher…" value="${esc(E.type==='Achat'?(E.articleNom||''):'')}" /><datalist id="dp-article-datalist">${articleDatalist}</datalist>`
                 : `<input type="text" disabled placeholder="Aucun article éligible — activez « Achat comptabilisé » dans Stock" />`}
             </div>
-            <div class="field"><label>Quantité</label><input type="text" inputmode="decimal" id="dp-qty" placeholder="0" oninput="dp_updateAchatCalc()" /></div>
+            <div class="field"><label>Quantité</label><input type="text" inputmode="decimal" id="dp-qty" placeholder="0" value="${E.type==='Achat'&&E.quantite!=null?esc(String(E.quantite)):''}" oninput="dp_updateAchatCalc()" /></div>
             <div class="field"><label>Mode de saisie</label>
               <div class="filter-row" style="margin:0;">
                 <button type="button" class="filter-chip ${dp_achatCalcMode==='prix'?'active':''}" style="${dp_achatCalcMode==='prix'?'background:var(--amber);border-color:var(--amber);color:#fff;':''}" onclick="dp_achatCalcMode='prix';dp_render()">Prix unitaire</button>
@@ -2029,9 +2056,9 @@ function dp_renderMouvForm(){
               </div>
             </div>
             ${dp_achatCalcMode==='prix' ? `
-              <div class="field" style="grid-column:1/-1;"><label>Prix unitaire (DA)</label><input type="text" inputmode="decimal" id="dp-prix" placeholder="0" oninput="dp_updateAchatCalc()" /></div>
+              <div class="field" style="grid-column:1/-1;"><label>Prix unitaire (DA)</label><input type="text" inputmode="decimal" id="dp-prix" placeholder="0" value="${(E.type==='Achat'&&E.quantite)?esc(String(E.montant/E.quantite)):''}" oninput="dp_updateAchatCalc()" /></div>
             ` : `
-              <div class="field" style="grid-column:1/-1;"><label>Montant total (DA)</label><input type="text" inputmode="decimal" id="dp-montant-total" placeholder="0" oninput="dp_updateAchatCalc()" /></div>
+              <div class="field" style="grid-column:1/-1;"><label>Montant total (DA)</label><input type="text" inputmode="decimal" id="dp-montant-total" placeholder="0" value="${(E.type==='Achat'&&E.montant!=null)?esc(String(E.montant)):''}" oninput="dp_updateAchatCalc()" /></div>
             `}
             <div style="grid-column:1/-1;font-size:12.5px;color:var(--ink-muted);" id="dp-achat-calc-preview"></div>
           </div>
@@ -2039,18 +2066,18 @@ function dp_renderMouvForm(){
         <div class="form-section">
           <div class="section-label"><span class="num">3</span>Compléments (optionnel)</div>
           <div class="grid grid-2">
-            <div class="field"><label>Fournisseur</label><input type="text" id="dp-fourn" /></div>
-            <div class="field"><label>Date péremption</label><input type="date" id="dp-dlc" /></div>
+            <div class="field"><label>Fournisseur</label><input type="text" id="dp-fourn" value="${esc(E.type==='Achat'?(E.fournisseur||E.stockEntry&&E.stockEntry.fournisseur||''):'')}" /></div>
+            <div class="field"><label>Date péremption</label><input type="date" id="dp-dlc" value="${E.type==='Achat'&&E.stockEntry?esc(E.stockEntry.datePeremption||''):''}" /></div>
           </div>
-          <div style="margin-top:10px;font-size:12px;color:var(--ink-muted);border-left:2px solid var(--amber);padding-left:10px;">Cet achat sera automatiquement ajouté comme entrée dans le module Stock.</div>
+          <div style="margin-top:10px;font-size:12px;color:var(--ink-muted);border-left:2px solid var(--amber);padding-left:10px;">Cet achat sera automatiquement ${isEditing?'mis à jour dans':'ajouté comme entrée dans'} le module Stock.</div>
         </div>
       ` : `
         <div class="form-section">
           <div class="section-label"><span class="num">2</span>Montant et détail</div>
           <div class="grid grid-2">
-            <div class="field"><label>Montant (DA)</label><input type="text" inputmode="decimal" id="dp-montant" placeholder="0" /></div>
+            <div class="field"><label>Montant (DA)</label><input type="text" inputmode="decimal" id="dp-montant" placeholder="0" value="${(E.type&&E.type!=='Achat'&&E.montant!=null)?esc(String(E.montant)):''}" /></div>
             <div class="field"><label>${dp_formType==='Charge'?'Motif / catégorie':'Note (optionnel)'}</label>
-              <input type="text" id="dp-libelle" placeholder="${dp_formType==='Charge'?'Ex. Loyer, Carburant…':'Ex. Appoint du matin'}" ${dp_formType==='Charge'?'list="dp-libelle-datalist"':''} />
+              <input type="text" id="dp-libelle" placeholder="${dp_formType==='Charge'?'Ex. Loyer, Carburant…':'Ex. Appoint du matin'}" value="${esc(E.type&&E.type!=='Achat'?(E.libelle||''):'')}" ${dp_formType==='Charge'?'list="dp-libelle-datalist"':''} />
               ${dp_formType==='Charge'?`<datalist id="dp-libelle-datalist">${chargeLibelleSuggestions}</datalist>`:''}
             </div>
           </div>
@@ -2059,20 +2086,20 @@ function dp_renderMouvForm(){
           <div class="form-section">
             <div class="section-label"><span class="num">3</span>Options complémentaires</div>
             <div style="display:flex;align-items:center;gap:8px;">
-              <input type="checkbox" id="dp-isavance" style="width:auto;" onchange="document.getElementById('dp-avance-wrap').style.display=this.checked?'flex':'none'" />
+              <input type="checkbox" id="dp-isavance" style="width:auto;" ${E.estAvanceSalaire?'checked':''} onchange="document.getElementById('dp-avance-wrap').style.display=this.checked?'flex':'none'" />
               <label style="text-transform:none;font-size:12.5px;font-weight:500;color:var(--ink);">Ceci est une avance / un acompte sur salaire</label>
             </div>
-            <div id="dp-avance-wrap" class="field" style="display:none;margin-top:10px;">
+            <div id="dp-avance-wrap" class="field" style="display:${E.estAvanceSalaire?'flex':'none'};margin-top:10px;">
               <label>Nom de l'employé</label>
-              <input type="text" id="dp-employe" list="dp-employe-list" placeholder="Prénom de l'employé" />
+              <input type="text" id="dp-employe" list="dp-employe-list" placeholder="Prénom de l'employé" value="${esc(E.employeNom||'')}" />
               <datalist id="dp-employe-list">${employeeSuggestions}</datalist>
             </div>
           </div>
         ` : ''}
       `}
       <div style="display:flex;gap:8px;margin-top:6px;">
-        <button class="btn" onclick="dp_submitMouv()">Ajouter et continuer</button>
-        <button class="btn ghost" onclick="dp_showMouvForm=false;dp_render()">Terminer la saisie</button>
+        <button class="btn" onclick="dp_submitMouv()">${isEditing ? '✓ Enregistrer les modifications' : 'Ajouter et continuer'}</button>
+        <button class="btn ghost" onclick="${isEditing?'dp_cancelEditMouv()':'dp_showMouvForm=false;dp_render()'}">${isEditing?'Annuler la modification':'Terminer la saisie'}</button>
       </div>
     </div>
   `;
@@ -2103,9 +2130,11 @@ function dp_resolveArticleByName(typed){
   return (st_state.articles||[]).filter(a=>a.achatGerant!==false).find(a=>a.nom.trim().toLowerCase()===clean) || null;
 }
 
-function dp_submitMouv(){
+async function dp_submitMouv(){
   if(!currentUser){ askUserName(false); if(!currentUser) return; }
+  if(dp_editingMouvId && !(session && session.isAdmin)){ alert("Seule l'administratrice peut modifier un mouvement déjà enregistré."); return; }
   const date = dp_workingDate;
+  let mouv;
   if(dp_formType==='Achat'){
     const typed = document.getElementById('dp-article') ? document.getElementById('dp-article').value : '';
     const article = dp_resolveArticleByName(typed);
@@ -2120,19 +2149,36 @@ function dp_submitMouv(){
       montantTotal = dp_parseNum(document.getElementById('dp-montant-total').value);
       prix = qty ? montantTotal/qty : 0;
     }
-    const stockEntry = {
-      id: uid(), articleId: article.id, date,
-      quantite: qty, prixUnitaire: prix||0,
-      datePeremption: document.getElementById('dp-dlc').value,
-      fournisseur: document.getElementById('dp-fourn').value,
-      numeroLot: '', par: currentUser,
-    };
-    const mouv = {
-      id: uid(), type:'Achat', date, montant: montantTotal,
-      articleId: article.id, articleNom: article.nom, quantite: qty, unite: article.unite,
-      stockEntry, pointe:false, creePar: currentUser, creeLe: new Date().toISOString(),
-    };
-    dp_draft.push(mouv);
+    const fournisseur = document.getElementById('dp-fourn').value;
+    const datePeremption = document.getElementById('dp-dlc').value;
+
+    if(dp_editingMouvId){
+      const original = dp_mouvements.find(m=>m.id===dp_editingMouvId);
+      const stockEntryId = original && original.stockEntry ? original.stockEntry.id : uid();
+      const stockEntry = {
+        id: stockEntryId, articleId: article.id, date,
+        quantite: qty, prixUnitaire: prix||0,
+        datePeremption, fournisseur, numeroLot: '', par: (original&&original.stockEntry&&original.stockEntry.par)||currentUser,
+      };
+      // Met à jour (ou recrée si introuvable) l'entrée correspondante dans le module Stock.
+      const idx = st_state.entries.findIndex(e=>e.id===stockEntryId);
+      if(idx>-1) st_state.entries[idx] = stockEntry; else st_state.entries.push(stockEntry);
+      await st_saveState();
+      mouv = {
+        ...original, type:'Achat', date, montant: montantTotal,
+        articleId: article.id, articleNom: article.nom, quantite: qty, unite: article.unite,
+        stockEntry, modifiePar: currentUser, modifieLe: new Date().toISOString(),
+      };
+      await dp_mouvCol.doc(dp_editingMouvId).set(mouv);
+    } else {
+      const stockEntry = { id: uid(), articleId: article.id, date, quantite: qty, prixUnitaire: prix||0, datePeremption, fournisseur, numeroLot: '', par: currentUser };
+      mouv = {
+        id: uid(), type:'Achat', date, montant: montantTotal,
+        articleId: article.id, articleNom: article.nom, quantite: qty, unite: article.unite,
+        stockEntry, pointe:false, creePar: currentUser, creeLe: new Date().toISOString(),
+      };
+      dp_draft.push(mouv);
+    }
   } else {
     const montant = dp_parseNum(document.getElementById('dp-montant').value);
     if(!montant){ alert('Merci de renseigner un montant.'); return; }
@@ -2141,13 +2187,29 @@ function dp_submitMouv(){
     const employeEl = document.getElementById('dp-employe');
     const employeNom = estAvanceSalaire && employeEl ? employeEl.value.trim() : '';
     if(estAvanceSalaire && !employeNom){ alert("Merci de renseigner le nom de l'employé pour cette avance."); return; }
-    const mouv = {
-      id: uid(), type: dp_formType, date, montant,
-      libelle: document.getElementById('dp-libelle').value,
-      estAvanceSalaire: !!estAvanceSalaire, employeNom,
-      pointe:false, creePar: currentUser, creeLe: new Date().toISOString(),
-    };
-    dp_draft.push(mouv);
+    const libelle = document.getElementById('dp-libelle').value;
+
+    if(dp_editingMouvId){
+      const original = dp_mouvements.find(m=>m.id===dp_editingMouvId);
+      mouv = {
+        ...original, type: dp_formType, date, montant, libelle,
+        estAvanceSalaire: !!estAvanceSalaire, employeNom,
+        modifiePar: currentUser, modifieLe: new Date().toISOString(),
+      };
+      await dp_mouvCol.doc(dp_editingMouvId).set(mouv);
+    } else {
+      mouv = {
+        id: uid(), type: dp_formType, date, montant, libelle,
+        estAvanceSalaire: !!estAvanceSalaire, employeNom,
+        pointe:false, creePar: currentUser, creeLe: new Date().toISOString(),
+      };
+      dp_draft.push(mouv);
+    }
+  }
+  if(dp_editingMouvId){
+    dp_editingMouvId = null;
+    dp_editPrefill = null;
+    dp_showMouvForm = false;
   }
   dp_render();
 }
@@ -2355,7 +2417,7 @@ let ku_viewAll = false;         // admin : voir tous les cuisiniers au lieu de "
 let ku_manageMode = false;
 let ku_showItemForm = false;
 let ku_editingItemId = null;
-let ku_itemForm = { nom:'', categorie:'Ingrédient', assignedTo:[] };
+let ku_itemForm = { nom:'', categorie:'Ingrédient', seuil:'', unite:'', assignedTo:[] };
 let mp_manageMode = false;
 let mp_showItemForm = false;
 let mp_newItemNom = '';
@@ -2394,39 +2456,57 @@ function cu_render(){
 function ku_myItems(){
   return ku_items.filter(it => (it.assignedTo||[]).includes(session.username));
 }
-function ku_todayEntries(){
-  const doc = ku_checksByDate[cu_workingDate];
-  return (doc && doc.entries) || {};
+function ku_computeStatus(item, qty){
+  const q = Number(qty);
+  if(isNaN(q) || q<=0) return 'rupture';
+  const seuil = Number(item.seuil)||0;
+  if(q <= seuil) return 'faible';
+  return 'ok';
 }
-async function ku_setStatus(itemId, status){
-  const path = `entries.${itemId}`;
-  await ku_checksCol.doc(cu_workingDate).set({
-    date: cu_workingDate,
-    entries: { [itemId]: { status, checkedBy: currentUser, checkedAt: new Date().toISOString() } }
+async function ku_setQuantity(itemId, qty){
+  const item = ku_items.find(it=>it.id===itemId);
+  if(!item) return;
+  const today = todayISO();
+  const checkedToday = item.dernierCheckedAt && item.dernierCheckedAt.slice(0,10)===today;
+  if(checkedToday && !(session && session.isAdmin)){
+    alert("Cet article a déjà été saisi aujourd'hui. Seule l'administratrice peut le modifier.");
+    cu_render();
+    return;
+  }
+  const q = ku_parseNum(qty);
+  const status = ku_computeStatus(item, q);
+  const now = new Date().toISOString();
+  // Valeur courante stockée sur l'article lui-même : elle reste affichée telle quelle
+  // tant qu'un cuisinier ne resaisit pas une quantité, quel que soit le nombre de jours écoulés.
+  await ku_itemsCol.doc(itemId).set({
+    dernierQuantite: q, dernierStatut: status, dernierCheckedBy: currentUser, dernierCheckedAt: now
+  }, { merge:true });
+  // Historique (facultatif, pour archive) : un enregistrement par jour de vérification.
+  await ku_checksCol.doc(today).set({
+    date: today,
+    entries: { [itemId]: { quantite: q, status, checkedBy: currentUser, checkedAt: now } }
   }, { merge:true });
 }
+function ku_parseNum(v){ if(v===null||v===undefined||v==='') return 0; const n = Number(String(v).replace(',','.')); return isNaN(n)?0:n; }
 
 function ku_renderTab(){
-  const entries = ku_todayEntries();
   const isAdmin = session && session.isAdmin;
   const showAll = isAdmin && ku_viewAll;
   const list = showAll ? ku_items : ku_myItems();
+  const today = todayISO();
 
-  const dateBar = `<div class="ticket" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-    <div class="field" style="flex:1;min-width:150px;margin:0;"><label>Date</label><input type="date" id="ku-date" value="${cu_workingDate}" onchange="cu_workingDate=this.value;cu_render()" /></div>
-    ${isAdmin ? `<button class="btn ghost small" onclick="ku_viewAll=!ku_viewAll;cu_render()">${ku_viewAll?'👤 Voir mes articles':'👥 Voir tous les cuisiniers'}</button>` : ''}
-  </div>`;
+  const viewBar = isAdmin ? `<div class="ticket" style="padding:12px 14px;">
+    <button class="btn ghost small" onclick="ku_viewAll=!ku_viewAll;cu_render()">${ku_viewAll?'👤 Voir mes articles':'👥 Voir tous les cuisiniers'}</button>
+  </div>` : '';
 
-  // Résumé des ruptures / faibles du jour (tous cuisiniers confondus)
-  const allStatuses = ku_items.map(it=>({ item: it, entry: entries[it.id] }));
-  const ruptures = allStatuses.filter(x=>x.entry && x.entry.status==='rupture');
-  const faibles = allStatuses.filter(x=>x.entry && x.entry.status==='faible');
-  const nonChecked = ku_items.filter(it => !entries[it.id]);
+  // Résumé des ruptures / faibles (état courant, tous cuisiniers confondus)
+  const ruptures = ku_items.filter(it=>it.dernierStatut==='rupture');
+  const faibles = ku_items.filter(it=>it.dernierStatut==='faible');
 
   const summary = (ruptures.length>0 || faibles.length>0) ? `
     <div class="ticket" style="border-color:var(--rust);">
-      ${ruptures.length>0 ? `<div style="font-size:12.5px;font-weight:700;color:var(--rust);margin-bottom:4px;">❌ En rupture (${ruptures.length}) : ${ruptures.map(x=>esc(x.item.nom)).join(', ')}</div>` : ''}
-      ${faibles.length>0 ? `<div style="font-size:12.5px;font-weight:700;color:var(--amber);">⚠️ Stock faible (${faibles.length}) : ${faibles.map(x=>esc(x.item.nom)).join(', ')}</div>` : ''}
+      ${ruptures.length>0 ? `<div style="font-size:12.5px;font-weight:700;color:var(--rust);margin-bottom:4px;">❌ En rupture (${ruptures.length}) : ${ruptures.map(x=>esc(x.nom)).join(', ')}</div>` : ''}
+      ${faibles.length>0 ? `<div style="font-size:12.5px;font-weight:700;color:var(--amber);">⚠️ Stock faible (${faibles.length}) : ${faibles.map(x=>esc(x.nom)).join(', ')}</div>` : ''}
     </div>` : '';
 
   const manageBar = isAdmin ? `
@@ -2438,7 +2518,8 @@ function ku_renderTab(){
 
   const manageForm = (isAdmin && ku_manageMode) ? ku_renderManageForm() : '';
 
-  const progressLabel = list.length>0 ? `<div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">${list.filter(it=>entries[it.id]).length} / ${list.length} vérifié(s)</div>` : '';
+  const checkedTodayCount = list.filter(it=>it.dernierCheckedAt && it.dernierCheckedAt.slice(0,10)===today).length;
+  const progressLabel = list.length>0 ? `<div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">${checkedTodayCount} / ${list.length} revérifié(s) aujourd'hui</div>` : '';
 
   const grouped = KU_CATEGORIES.map(cat => ({ cat, items: list.filter(it=>it.categorie===cat) })).filter(g=>g.items.length>0);
 
@@ -2447,27 +2528,40 @@ function ku_renderTab(){
     : grouped.map(g => `
       <h2 class="section" style="margin-top:16px;">${esc(g.cat)}${g.cat==='Ingrédient'?'s':'s'}</h2>
       ${g.items.map(it=>{
-        const entry = entries[it.id];
         const assignedNames = showAll ? (it.assignedTo||[]).join(', ') : '';
-        return `<div class="ticket" style="padding:12px 14px;">
-          <div class="row-between" style="margin-bottom:${it.assignedTo&&showAll?'2px':'8px'};">
+        const statutMeta = it.dernierStatut ? ku_statutMeta(it.dernierStatut) : null;
+        const seuil = Number(it.seuil)||0;
+        const checkedToday = it.dernierCheckedAt && it.dernierCheckedAt.slice(0,10)===today;
+        let lastCheckLabel = '';
+        if(it.dernierCheckedBy){
+          lastCheckLabel = checkedToday
+            ? ` · vérifié par ${esc(it.dernierCheckedBy)} aujourd'hui`
+            : ` · dernière vérif. par ${esc(it.dernierCheckedBy)} le ${fmtDateShort(it.dernierCheckedAt.slice(0,10))} — à revérifier`;
+        }
+        return `<div class="ticket" style="padding:12px 14px;${statutMeta?`border-color:${statutMeta.color};`:''}">
+          <div class="row-between" style="margin-bottom:2px;">
             <div style="font-size:14px;font-weight:600;">${esc(it.nom)}</div>
-            ${entry ? `<span style="font-size:11px;color:var(--ink-muted);">${entry.checkedBy?'par '+esc(entry.checkedBy):''}</span>` : ''}
+            ${statutMeta ? `<span class="chip" style="color:${statutMeta.color};background:${statutMeta.bg};">${statutMeta.ic} ${esc(statutMeta.label)}</span>` : ''}
           </div>
-          ${showAll && it.assignedTo && it.assignedTo.length>0 ? `<div style="font-size:11px;color:var(--ink-muted);margin-bottom:8px;">Assigné à : ${esc(assignedNames)}</div>` : ''}
-          <div class="grid grid-2" style="gap:6px;grid-template-columns:repeat(3,1fr);">
-            ${KU_STATUTS.map(s=>`
-              <button onclick="ku_setStatus('${it.id}','${s.id}')" style="padding:10px 4px;border-radius:8px;border:2px solid ${entry&&entry.status===s.id?s.color:'var(--line)'};background:${entry&&entry.status===s.id?s.bg:'var(--surface)'};text-align:center;cursor:pointer;">
-                <div style="font-size:16px;">${s.ic}</div>
-                <div style="font-size:10.5px;font-weight:600;color:${entry&&entry.status===s.id?s.color:'var(--ink-muted)'};margin-top:2px;">${esc(s.label)}</div>
-              </button>
-            `).join('')}
+          <div style="font-size:11px;color:${checkedToday?'var(--ink-muted)':'var(--amber)'};margin-bottom:8px;">
+            Seuil disponible : > ${st_fmtNum(seuil)} ${esc(it.unite||'')}
+            ${showAll && it.assignedTo && it.assignedTo.length>0 ? ` · Assigné à : ${esc(assignedNames)}` : ''}
+            ${lastCheckLabel}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${(isAdmin || !checkedToday) ? `
+              <input type="text" inputmode="decimal" placeholder="Quantité" value="${it.dernierQuantite!=null?esc(String(it.dernierQuantite)):''}" style="flex:1;" onchange="ku_setQuantity('${it.id}',this.value)" />
+              <span style="font-size:12.5px;color:var(--ink-muted);min-width:36px;">${esc(it.unite||'')}</span>
+            ` : `
+              <div style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink-muted);">${it.dernierQuantite!=null?esc(String(it.dernierQuantite)):'—'} ${esc(it.unite||'')}</div>
+              <span style="font-size:10.5px;color:var(--ink-muted);max-width:90px;">🔒 Déjà saisi — seule l'administratrice peut modifier</span>
+            `}
           </div>
         </div>`;
       }).join('')}
     `).join('');
 
-  return dateBar + summary + manageBar + manageForm + progressLabel + itemsHtml;
+  return viewBar + summary + manageBar + manageForm + progressLabel + itemsHtml;
 }
 
 function ku_renderManageForm(){
@@ -2476,6 +2570,11 @@ function ku_renderManageForm(){
     <div class="ticket" style="padding:16px;">
       <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--forest);">${ku_editingItemId ? "Modifier l'article" : 'Nouvel article à checker'}</div>
       <div class="field" style="margin-bottom:10px;"><label>Nom</label><input type="text" id="ku-if-nom" value="${esc(ku_itemForm.nom)}" placeholder="Ex. Nori, Sauce gyoza…" /></div>
+      <div class="grid grid-2" style="margin-bottom:10px;">
+        <div class="field"><label>Seuil disponible (unités)</label><input type="text" inputmode="decimal" id="ku-if-seuil" value="${esc(String(ku_itemForm.seuil!=null?ku_itemForm.seuil:''))}" placeholder="Ex. 5" /></div>
+        <div class="field"><label>Unité</label><input type="text" id="ku-if-unite" value="${esc(ku_itemForm.unite||'')}" placeholder="Ex. paquets, kg…" /></div>
+      </div>
+      <div style="font-size:11px;color:var(--ink-muted);margin:-4px 0 12px;">Rupture si quantité = 0 · Faible si 0 &lt; quantité ≤ seuil · Disponible si quantité &gt; seuil</div>
       <div class="field" style="margin-bottom:10px;"><label>Catégorie</label>
         <div class="filter-row" style="margin:0;">
           ${KU_CATEGORIES.map(c=>`<button type="button" class="filter-chip ${ku_itemForm.categorie===c?'active':''}" style="${ku_itemForm.categorie===c?'background:var(--forest);border-color:var(--forest);color:#fff;':''}" onclick="ku_itemForm.categorie='${c}';cu_render()">${esc(c)}</button>`).join('')}
@@ -2501,7 +2600,7 @@ function ku_renderManageForm(){
     ${ku_items.map(it=>`
       <div class="movement-row">
         <div><div style="font-weight:500;">${esc(it.nom)}</div>
-        <div class="sub">${esc(it.categorie)}${it.assignedTo&&it.assignedTo.length?' · '+esc(it.assignedTo.join(', ')):' · non assigné'}</div></div>
+        <div class="sub">${esc(it.categorie)} · seuil > ${st_fmtNum(Number(it.seuil)||0)} ${esc(it.unite||'')}${it.assignedTo&&it.assignedTo.length?' · '+esc(it.assignedTo.join(', ')):' · non assigné'}</div></div>
         <div style="display:flex;gap:10px;">
           <button class="x-btn" style="color:var(--forest);font-size:12px;" onclick="ku_openItemForm('${it.id}')">✏️</button>
           <button class="x-btn" onclick="ku_deleteItem('${it.id}')">🗑</button>
@@ -2517,14 +2616,18 @@ function ku_openItemForm(id){
   ku_showItemForm = true;
   const editing = id ? ku_items.find(it=>it.id===id) : null;
   ku_itemForm = editing
-    ? { nom: editing.nom, categorie: editing.categorie, assignedTo: (editing.assignedTo||[]).slice() }
-    : { nom:'', categorie:'Ingrédient', assignedTo: [] };
+    ? { nom: editing.nom, categorie: editing.categorie, seuil: editing.seuil!=null?editing.seuil:'', unite: editing.unite||'', assignedTo: (editing.assignedTo||[]).slice() }
+    : { nom:'', categorie:'Ingrédient', seuil:'', unite:'', assignedTo: [] };
   cu_render();
 }
 function ku_closeItemForm(){ ku_showItemForm = false; ku_editingItemId = null; cu_render(); }
 function ku_toggleAssign(username, checked){
   const nomEl = document.getElementById('ku-if-nom');
+  const seuilEl = document.getElementById('ku-if-seuil');
+  const uniteEl = document.getElementById('ku-if-unite');
   if(nomEl) ku_itemForm.nom = nomEl.value;
+  if(seuilEl) ku_itemForm.seuil = seuilEl.value;
+  if(uniteEl) ku_itemForm.unite = uniteEl.value;
   if(checked){ if(!ku_itemForm.assignedTo.includes(username)) ku_itemForm.assignedTo.push(username); }
   else { ku_itemForm.assignedTo = ku_itemForm.assignedTo.filter(u=>u!==username); }
   cu_render();
@@ -2532,7 +2635,9 @@ function ku_toggleAssign(username, checked){
 async function ku_saveItem(){
   const nom = (document.getElementById('ku-if-nom').value||'').trim();
   if(!nom){ alert('Merci de renseigner un nom.'); return; }
-  const data = { nom, categorie: ku_itemForm.categorie, assignedTo: ku_itemForm.assignedTo };
+  const seuil = ku_parseNum(document.getElementById('ku-if-seuil').value);
+  const unite = document.getElementById('ku-if-unite').value.trim();
+  const data = { nom, categorie: ku_itemForm.categorie, seuil, unite, assignedTo: ku_itemForm.assignedTo };
   if(ku_editingItemId) await ku_itemsCol.doc(ku_editingItemId).set(data, { merge:true });
   else await ku_itemsCol.doc(uid()).set(data);
   ku_showItemForm = false; ku_editingItemId = null;
