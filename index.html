@@ -302,6 +302,11 @@
   <main id="depenses-main"></main>
 </div>
 
+<div id="module-cuisine" class="module">
+  <nav class="tabs" id="cuisine-tabs"></nav>
+  <main id="cuisine-main"></main>
+</div>
+
 <div id="module-users" class="module">
   <main style="max-width:760px;margin:0 auto;padding:18px 16px 40px;">
     <h2 class="section" style="margin-top:4px;">Nouvel utilisateur</h2>
@@ -324,6 +329,7 @@
         <div class="perm-row"><span>Accès Stock</span><label class="switch"><input type="checkbox" id="nu-perm-stock" checked><span class="slider"></span></label></div>
         <div class="perm-row"><span>Accès Caisse</span><label class="switch"><input type="checkbox" id="nu-perm-caisse" checked><span class="slider"></span></label></div>
         <div class="perm-row"><span>Accès Dépenses</span><label class="switch"><input type="checkbox" id="nu-perm-depenses" checked><span class="slider"></span></label></div>
+        <div class="perm-row"><span>Accès Cuisine</span><label class="switch"><input type="checkbox" id="nu-perm-cuisine" checked><span class="slider"></span></label></div>
       </div>
       <button class="btn moss" style="margin-top:14px;" onclick="uu_createUser()">➕ Créer l'utilisateur</button>
     </div>
@@ -359,7 +365,8 @@ const SESSION_KEY = 'allosushi-session';
 const MODULE_DEFS = [
   { key:'stock',    label:'Stock',     ic:'📦', desc:'Articles, entrées, sorties' },
   { key:'caisse',   label:'Caisse',    ic:'💰', desc:'Sessions de caisse' },
-  { key:'depenses', label:'Dépenses',  ic:'🧾', desc:'Dépenses & pointages' }
+  { key:'depenses', label:'Dépenses',  ic:'🧾', desc:'Dépenses & pointages' },
+  { key:'cuisine',  label:'Cuisine',   ic:'🍣', desc:'Checklists ingrédients & mise en place' }
 ];
 let session = null; // { username, isAdmin, permissions:{stock,caisse,depenses} }
 let usersCache = [];
@@ -448,7 +455,7 @@ async function handleAuthSubmit(){
       username: uname,
       password: pwd,
       isAdmin: true,
-      permissions: { stock:true, caisse:true, depenses:true },
+      permissions: { stock:true, caisse:true, depenses:true, cuisine:true },
       creeLe: new Date().toISOString()
     };
     try{
@@ -538,10 +545,11 @@ async function uu_createUser(){
     username: uname,
     password: pwd,
     isAdmin,
-    permissions: isAdmin ? { stock:true, caisse:true, depenses:true } : {
+    permissions: isAdmin ? { stock:true, caisse:true, depenses:true, cuisine:true } : {
       stock: document.getElementById('nu-perm-stock').checked,
       caisse: document.getElementById('nu-perm-caisse').checked,
-      depenses: document.getElementById('nu-perm-depenses').checked
+      depenses: document.getElementById('nu-perm-depenses').checked,
+      cuisine: document.getElementById('nu-perm-cuisine').checked
     },
     creeLe: new Date().toISOString(),
     creePar: currentUser
@@ -558,7 +566,7 @@ async function uu_togglePerm(userId, key, checked){
 }
 async function uu_toggleAdmin(userId, checked){
   const patch = { isAdmin: checked };
-  if(checked) patch.permissions = { stock:true, caisse:true, depenses:true };
+  if(checked) patch.permissions = { stock:true, caisse:true, depenses:true, cuisine:true };
   await appUsersCol.doc(userId).set(patch, { merge:true });
 }
 async function uu_deleteUser(userId){
@@ -661,6 +669,7 @@ function showModule(name){
   });
   if(name==='home') renderHome();
   if(name==='users') uu_render();
+  if(name==='cuisine' && typeof cu_render==='function') cu_render();
 }
 
 document.getElementById('today-label').textContent =
@@ -1738,7 +1747,9 @@ let dp_mouvements = [];
 let dp_pointages = [];
 let dp_currentTab = 'tableau';
 let dp_typeFilter = 'Tous';
-let dp_dateFilter = '';
+let dp_dateFilterStart = '';
+let dp_dateFilterEnd = '';
+let dp_searchTerm = '';
 let dp_showMouvForm = false;
 let dp_formType = 'Achat';
 let dp_showPointageForm = false;
@@ -1884,8 +1895,16 @@ function dp_renderTableauTab(){
 
 function dp_renderMouvementsTab(){
   const solde = dp_computeSolde(dp_mouvements);
-  const byType = dp_typeFilter==='Tous' ? dp_mouvements : dp_mouvements.filter(m=>m.type===dp_typeFilter);
-  const filtered = dp_dateFilter ? byType.filter(m=>m.date===dp_dateFilter) : byType;
+  let filtered = dp_typeFilter==='Tous' ? dp_mouvements : dp_mouvements.filter(m=>m.type===dp_typeFilter);
+  if(dp_dateFilterStart) filtered = filtered.filter(m=>m.date>=dp_dateFilterStart);
+  if(dp_dateFilterEnd) filtered = filtered.filter(m=>m.date<=dp_dateFilterEnd);
+  if(dp_searchTerm.trim()){
+    const q = dp_searchTerm.trim().toLowerCase();
+    filtered = filtered.filter(m=>{
+      const hay = [m.libelle, m.articleNom, m.fournisseur, m.employeNom, m.creePar, m.type].filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }
   const sorted = filtered.slice().sort((a,b)=> a.date<b.date?1: a.date>b.date?-1: (a.creeLe<b.creeLe?1:-1));
 
   const soldeBox = `<div class="result-box ${solde>=0?'final':'prelim'}" style="margin-bottom:14px;">
@@ -1897,6 +1916,7 @@ function dp_renderMouvementsTab(){
     <div class="field" style="flex:1;min-width:150px;"><label>Date de saisie</label><input type="date" id="dp-working-date" value="${dp_workingDate}" onchange="dp_workingDate=this.value;dp_render()" /></div>
     <button class="btn" onclick="dp_showMouvForm=!dp_showMouvForm;dp_render()">+ Mouvement</button>
   </div>`;
+
 
   const form = dp_showMouvForm ? dp_renderMouvForm() : '';
 
@@ -1923,12 +1943,22 @@ function dp_renderMouvementsTab(){
     </div>
   ` : '';
 
+  const hasDateFilter = dp_dateFilterStart || dp_dateFilterEnd;
+  let dateFilterSummary = '';
+  if(dp_dateFilterStart && dp_dateFilterEnd) dateFilterSummary = `du ${fmtDateShort(dp_dateFilterStart)} au ${fmtDateShort(dp_dateFilterEnd)}`;
+  else if(dp_dateFilterStart) dateFilterSummary = `à partir du ${fmtDateShort(dp_dateFilterStart)}`;
+  else if(dp_dateFilterEnd) dateFilterSummary = `jusqu'au ${fmtDateShort(dp_dateFilterEnd)}`;
+
   const filterChips = `<h2 class="section">Mouvements déjà enregistrés</h2>
-    <div class="ticket" style="padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-      <div class="field" style="flex:1;min-width:150px;margin:0;"><label>Filtrer par jour</label><input type="date" id="dp-date-filter" value="${dp_dateFilter}" onchange="dp_dateFilter=this.value;dp_render()" /></div>
-      ${dp_dateFilter ? `<button class="btn ghost small" onclick="dp_dateFilter='';dp_render()">✕ Effacer</button>` : ''}
+    <div class="ticket" style="padding:10px 14px;margin-bottom:10px;">
+      <div class="search-wrap" style="margin-bottom:10px;"><span class="icon">🔎</span><input type="text" id="dp-search" placeholder="Rechercher (motif, fournisseur, article, employé, saisi par…)" value="${esc(dp_searchTerm)}" oninput="dp_searchTerm=this.value;dp_render()" /></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div class="field" style="flex:1;min-width:130px;margin:0;"><label>Du</label><input type="date" id="dp-date-filter-start" value="${dp_dateFilterStart}" onchange="dp_dateFilterStart=this.value;dp_render()" /></div>
+        <div class="field" style="flex:1;min-width:130px;margin:0;"><label>Au</label><input type="date" id="dp-date-filter-end" value="${dp_dateFilterEnd}" onchange="dp_dateFilterEnd=this.value;dp_render()" /></div>
+        ${(hasDateFilter||dp_searchTerm) ? `<button class="btn ghost small" onclick="dp_dateFilterStart='';dp_dateFilterEnd='';dp_searchTerm='';dp_render()">✕ Effacer</button>` : ''}
+      </div>
     </div>
-    ${dp_dateFilter ? `<div style="font-size:12px;color:var(--forest);margin-bottom:8px;">Affichage limité au ${fmtDateShort(dp_dateFilter)} — ${sorted.length} mouvement(s)</div>` : ''}
+    ${(hasDateFilter||dp_searchTerm) ? `<div style="font-size:12px;color:var(--forest);margin-bottom:8px;">${dateFilterSummary}${dateFilterSummary&&dp_searchTerm?' · ':''}${dp_searchTerm?`recherche « ${esc(dp_searchTerm)} »`:''} — ${sorted.length} mouvement(s)</div>` : ''}
     <div class="filter-row">
     <button class="filter-chip ${dp_typeFilter==='Tous'?'active':''}" style="${dp_typeFilter==='Tous'?'background:var(--forest);border-color:var(--forest);color:#fff;':''}" onclick="dp_typeFilter='Tous';dp_render()">Tous</button>
     ${DP_TYPES.map(t=>`<button class="filter-chip ${dp_typeFilter===t.id?'active':''}" style="${dp_typeFilter===t.id?`background:${t.color};border-color:${t.color};color:#fff;`:''}" onclick="dp_typeFilter='${t.id}';dp_render()">${esc(t.shortLabel)}</button>`).join('')}
@@ -2299,6 +2329,293 @@ function dp_fmtMoney(n){ return dp_fmtNum(n)+' DA'; }
 function dp_parseNum(v){ if(v===null||v===undefined||v==='') return 0; const n = Number(String(v).replace(',','.')); return isNaN(n)?0:n; }
 
 dp_render();
+
+/* ==================== MODULE CUISINE ==================== */
+const ku_itemsCol = db.collection('cuisine_items');
+const ku_checksCol = db.collection('cuisine_ingredient_checks');
+const mp_itemsCol = db.collection('cuisine_miseenplace_items');
+const mp_checksCol = db.collection('cuisine_miseenplace_checks');
+
+const KU_CATEGORIES = ['Ingrédient', 'Préparation'];
+const KU_STATUTS = [
+  { id:'ok',      label:'Disponible', ic:'✅', color:'var(--moss)', bg:'var(--moss-bg)' },
+  { id:'faible',  label:'Faible',     ic:'⚠️', color:'var(--amber)', bg:'var(--amber-bg)' },
+  { id:'rupture', label:'Rupture',    ic:'❌', color:'var(--rust)', bg:'var(--rust-bg)' },
+];
+function ku_statutMeta(id){ return KU_STATUTS.find(s=>s.id===id) || null; }
+
+let ku_items = [];              // liste maître des ingrédients/préparations à checker
+let ku_checksByDate = {};       // { date: { entries: { itemId: {status, checkedBy, checkedAt} } } }
+let mp_items = [];              // liste maître de la mise en place
+let mp_checksByDate = {};       // { date: { entries: { itemId: {checked, checkedBy, checkedAt} } } }
+
+let cu_currentTab = 'ingredients';
+let cu_workingDate = todayISO();
+let ku_viewAll = false;         // admin : voir tous les cuisiniers au lieu de "mes articles"
+let ku_manageMode = false;
+let ku_showItemForm = false;
+let ku_editingItemId = null;
+let ku_itemForm = { nom:'', categorie:'Ingrédient', assignedTo:[] };
+let mp_manageMode = false;
+let mp_showItemForm = false;
+let mp_newItemNom = '';
+
+ku_itemsCol.onSnapshot(snap=>{
+  ku_items = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+  cu_render();
+}, err=>console.error(err));
+ku_checksCol.onSnapshot(snap=>{
+  ku_checksByDate = {};
+  snap.forEach(doc=> ku_checksByDate[doc.id] = doc.data());
+  cu_render();
+}, err=>console.error(err));
+mp_itemsCol.onSnapshot(snap=>{
+  mp_items = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=>(a.ordre||0)-(b.ordre||0));
+  cu_render();
+}, err=>console.error(err));
+mp_checksCol.onSnapshot(snap=>{
+  mp_checksByDate = {};
+  snap.forEach(doc=> mp_checksByDate[doc.id] = doc.data());
+  cu_render();
+}, err=>console.error(err));
+
+function cu_setTab(t){ cu_currentTab = t; cu_render(); }
+function cu_render(){
+  document.getElementById('cuisine-tabs').innerHTML = `
+    <button class="${cu_currentTab==='ingredients'?'active':''}" onclick="cu_setTab('ingredients')">🧺 Ingrédients</button>
+    <button class="${cu_currentTab==='miseenplace'?'active':''}" onclick="cu_setTab('miseenplace')">🍱 Mise en place</button>
+  `;
+  const main = document.getElementById('cuisine-main');
+  if(cu_currentTab==='ingredients') main.innerHTML = ku_renderTab();
+  else main.innerHTML = mp_renderTab();
+}
+
+/* ---------------- Onglet Ingrédients (checklist du soir, assignée par cuisinier) ---------------- */
+function ku_myItems(){
+  return ku_items.filter(it => (it.assignedTo||[]).includes(session.username));
+}
+function ku_todayEntries(){
+  const doc = ku_checksByDate[cu_workingDate];
+  return (doc && doc.entries) || {};
+}
+async function ku_setStatus(itemId, status){
+  const path = `entries.${itemId}`;
+  await ku_checksCol.doc(cu_workingDate).set({
+    date: cu_workingDate,
+    entries: { [itemId]: { status, checkedBy: currentUser, checkedAt: new Date().toISOString() } }
+  }, { merge:true });
+}
+
+function ku_renderTab(){
+  const entries = ku_todayEntries();
+  const isAdmin = session && session.isAdmin;
+  const showAll = isAdmin && ku_viewAll;
+  const list = showAll ? ku_items : ku_myItems();
+
+  const dateBar = `<div class="ticket" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+    <div class="field" style="flex:1;min-width:150px;margin:0;"><label>Date</label><input type="date" id="ku-date" value="${cu_workingDate}" onchange="cu_workingDate=this.value;cu_render()" /></div>
+    ${isAdmin ? `<button class="btn ghost small" onclick="ku_viewAll=!ku_viewAll;cu_render()">${ku_viewAll?'👤 Voir mes articles':'👥 Voir tous les cuisiniers'}</button>` : ''}
+  </div>`;
+
+  // Résumé des ruptures / faibles du jour (tous cuisiniers confondus)
+  const allStatuses = ku_items.map(it=>({ item: it, entry: entries[it.id] }));
+  const ruptures = allStatuses.filter(x=>x.entry && x.entry.status==='rupture');
+  const faibles = allStatuses.filter(x=>x.entry && x.entry.status==='faible');
+  const nonChecked = ku_items.filter(it => !entries[it.id]);
+
+  const summary = (ruptures.length>0 || faibles.length>0) ? `
+    <div class="ticket" style="border-color:var(--rust);">
+      ${ruptures.length>0 ? `<div style="font-size:12.5px;font-weight:700;color:var(--rust);margin-bottom:4px;">❌ En rupture (${ruptures.length}) : ${ruptures.map(x=>esc(x.item.nom)).join(', ')}</div>` : ''}
+      ${faibles.length>0 ? `<div style="font-size:12.5px;font-weight:700;color:var(--amber);">⚠️ Stock faible (${faibles.length}) : ${faibles.map(x=>esc(x.item.nom)).join(', ')}</div>` : ''}
+    </div>` : '';
+
+  const manageBar = isAdmin ? `
+    <div class="row-between" style="margin:14px 0 6px;">
+      <h2 class="section" style="margin:0;">${showAll ? 'Tous les articles' : 'Mes articles à vérifier'}</h2>
+      <button style="background:none;border:none;color:var(--forest);font-size:12px;font-weight:600;cursor:pointer;" onclick="ku_manageMode=!ku_manageMode;cu_render()">${ku_manageMode?'Terminer':'⚙️ Gérer la liste'}</button>
+    </div>
+  ` : `<h2 class="section">Mes articles à vérifier ce soir</h2>`;
+
+  const manageForm = (isAdmin && ku_manageMode) ? ku_renderManageForm() : '';
+
+  const progressLabel = list.length>0 ? `<div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">${list.filter(it=>entries[it.id]).length} / ${list.length} vérifié(s)</div>` : '';
+
+  const grouped = KU_CATEGORIES.map(cat => ({ cat, items: list.filter(it=>it.categorie===cat) })).filter(g=>g.items.length>0);
+
+  const itemsHtml = list.length===0
+    ? `<div class="empty-state">${showAll ? "Aucun article dans la liste. Ajoutez-en via « Gérer la liste »." : "Aucun article ne vous a été assigné. Demandez à l'administrateur de vous en attribuer via « Gérer la liste »."}</div>`
+    : grouped.map(g => `
+      <h2 class="section" style="margin-top:16px;">${esc(g.cat)}${g.cat==='Ingrédient'?'s':'s'}</h2>
+      ${g.items.map(it=>{
+        const entry = entries[it.id];
+        const assignedNames = showAll ? (it.assignedTo||[]).join(', ') : '';
+        return `<div class="ticket" style="padding:12px 14px;">
+          <div class="row-between" style="margin-bottom:${it.assignedTo&&showAll?'2px':'8px'};">
+            <div style="font-size:14px;font-weight:600;">${esc(it.nom)}</div>
+            ${entry ? `<span style="font-size:11px;color:var(--ink-muted);">${entry.checkedBy?'par '+esc(entry.checkedBy):''}</span>` : ''}
+          </div>
+          ${showAll && it.assignedTo && it.assignedTo.length>0 ? `<div style="font-size:11px;color:var(--ink-muted);margin-bottom:8px;">Assigné à : ${esc(assignedNames)}</div>` : ''}
+          <div class="grid grid-2" style="gap:6px;grid-template-columns:repeat(3,1fr);">
+            ${KU_STATUTS.map(s=>`
+              <button onclick="ku_setStatus('${it.id}','${s.id}')" style="padding:10px 4px;border-radius:8px;border:2px solid ${entry&&entry.status===s.id?s.color:'var(--line)'};background:${entry&&entry.status===s.id?s.bg:'var(--surface)'};text-align:center;cursor:pointer;">
+                <div style="font-size:16px;">${s.ic}</div>
+                <div style="font-size:10.5px;font-weight:600;color:${entry&&entry.status===s.id?s.color:'var(--ink-muted)'};margin-top:2px;">${esc(s.label)}</div>
+              </button>
+            `).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    `).join('');
+
+  return dateBar + summary + manageBar + manageForm + progressLabel + itemsHtml;
+}
+
+function ku_renderManageForm(){
+  const cooks = usersCache.filter(u=>!u.isAdmin || u.isAdmin); // tous les utilisateurs (admin inclus, on peut s'auto-assigner)
+  const openForm = ku_showItemForm ? `
+    <div class="ticket" style="padding:16px;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--forest);">${ku_editingItemId ? "Modifier l'article" : 'Nouvel article à checker'}</div>
+      <div class="field" style="margin-bottom:10px;"><label>Nom</label><input type="text" id="ku-if-nom" value="${esc(ku_itemForm.nom)}" placeholder="Ex. Nori, Sauce gyoza…" /></div>
+      <div class="field" style="margin-bottom:10px;"><label>Catégorie</label>
+        <div class="filter-row" style="margin:0;">
+          ${KU_CATEGORIES.map(c=>`<button type="button" class="filter-chip ${ku_itemForm.categorie===c?'active':''}" style="${ku_itemForm.categorie===c?'background:var(--forest);border-color:var(--forest);color:#fff;':''}" onclick="ku_itemForm.categorie='${c}';cu_render()">${esc(c)}</button>`).join('')}
+        </div>
+      </div>
+      <div class="field">
+        <label>Assigné à (cuisinier(s) responsable(s) de la vérification)</label>
+        ${cooks.map(u=>`
+          <div class="perm-row">
+            <span>${esc(u.username||u.id)}${u.isAdmin?' <span class="badge-admin">Admin</span>':''}</span>
+            <label class="switch"><input type="checkbox" ${ku_itemForm.assignedTo.includes(u.id)?'checked':''} onchange="ku_toggleAssign('${u.id}',this.checked)"><span class="slider"></span></label>
+          </div>
+        `).join('')}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button class="btn moss" onclick="ku_saveItem()">${ku_editingItemId ? 'Enregistrer' : 'Ajouter'}</button>
+        <button class="btn ghost" onclick="ku_closeItemForm()">Annuler</button>
+      </div>
+    </div>
+  ` : `<button class="btn" style="margin-bottom:10px;" onclick="ku_openItemForm()">+ Nouvel article</button>`;
+
+  const list = ku_items.length===0 ? '' : `<div style="margin-top:10px;">
+    ${ku_items.map(it=>`
+      <div class="movement-row">
+        <div><div style="font-weight:500;">${esc(it.nom)}</div>
+        <div class="sub">${esc(it.categorie)}${it.assignedTo&&it.assignedTo.length?' · '+esc(it.assignedTo.join(', ')):' · non assigné'}</div></div>
+        <div style="display:flex;gap:10px;">
+          <button class="x-btn" style="color:var(--forest);font-size:12px;" onclick="ku_openItemForm('${it.id}')">✏️</button>
+          <button class="x-btn" onclick="ku_deleteItem('${it.id}')">🗑</button>
+        </div>
+      </div>
+    `).join('')}
+  </div>`;
+
+  return `<div class="ticket" style="background:var(--paper);">${openForm}${list}</div>`;
+}
+function ku_openItemForm(id){
+  ku_editingItemId = id || null;
+  ku_showItemForm = true;
+  const editing = id ? ku_items.find(it=>it.id===id) : null;
+  ku_itemForm = editing
+    ? { nom: editing.nom, categorie: editing.categorie, assignedTo: (editing.assignedTo||[]).slice() }
+    : { nom:'', categorie:'Ingrédient', assignedTo: [] };
+  cu_render();
+}
+function ku_closeItemForm(){ ku_showItemForm = false; ku_editingItemId = null; cu_render(); }
+function ku_toggleAssign(username, checked){
+  const nomEl = document.getElementById('ku-if-nom');
+  if(nomEl) ku_itemForm.nom = nomEl.value;
+  if(checked){ if(!ku_itemForm.assignedTo.includes(username)) ku_itemForm.assignedTo.push(username); }
+  else { ku_itemForm.assignedTo = ku_itemForm.assignedTo.filter(u=>u!==username); }
+  cu_render();
+}
+async function ku_saveItem(){
+  const nom = (document.getElementById('ku-if-nom').value||'').trim();
+  if(!nom){ alert('Merci de renseigner un nom.'); return; }
+  const data = { nom, categorie: ku_itemForm.categorie, assignedTo: ku_itemForm.assignedTo };
+  if(ku_editingItemId) await ku_itemsCol.doc(ku_editingItemId).set(data, { merge:true });
+  else await ku_itemsCol.doc(uid()).set(data);
+  ku_showItemForm = false; ku_editingItemId = null;
+  cu_render();
+}
+async function ku_deleteItem(id){
+  if(!confirm('Supprimer cet article de la checklist ?')) return;
+  await ku_itemsCol.doc(id).delete();
+}
+
+/* ---------------- Onglet Mise en place (avant service) ---------------- */
+function mp_todayEntries(){
+  const doc = mp_checksByDate[cu_workingDate];
+  return (doc && doc.entries) || {};
+}
+async function mp_toggle(itemId, checked){
+  await mp_checksCol.doc(cu_workingDate).set({
+    date: cu_workingDate,
+    entries: { [itemId]: checked ? { checked:true, checkedBy: currentUser, checkedAt: new Date().toISOString() } : firebase.firestore.FieldValue.delete() }
+  }, { merge:true });
+}
+
+function mp_renderTab(){
+  const entries = mp_todayEntries();
+  const isAdmin = session && session.isAdmin;
+  const doneCount = mp_items.filter(it=>entries[it.id] && entries[it.id].checked).length;
+
+  const dateBar = `<div class="ticket" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+    <div class="field" style="flex:1;min-width:150px;margin:0;"><label>Date</label><input type="date" id="mp-date" value="${cu_workingDate}" onchange="cu_workingDate=this.value;cu_render()" /></div>
+    ${isAdmin ? `<button class="btn ghost small" onclick="mp_manageMode=!mp_manageMode;cu_render()">${mp_manageMode?'Terminer':'⚙️ Gérer la liste'}</button>` : ''}
+  </div>`;
+
+  const manageBox = (isAdmin && mp_manageMode) ? `
+    <div class="ticket" style="background:var(--paper);">
+      <div class="grid grid-2" style="margin-bottom:8px;">
+        <input type="text" id="mp-new-item" placeholder="Ex. Préparer le riz, sortir le poisson…" value="${esc(mp_newItemNom)}" oninput="mp_newItemNom=this.value" style="grid-column:1/-1;" />
+      </div>
+      <button class="btn moss" onclick="mp_addItem()">+ Ajouter à la liste</button>
+      <div style="margin-top:12px;">
+        ${mp_items.map(it=>`
+          <div class="movement-row">
+            <div style="font-weight:500;">${esc(it.nom)}</div>
+            <button class="x-btn" onclick="mp_deleteItem('${it.id}')">🗑</button>
+          </div>
+        `).join('') || `<p style="font-size:12px;color:var(--ink-muted);">Aucun élément pour l'instant.</p>`}
+      </div>
+    </div>
+  ` : '';
+
+  const progress = mp_items.length>0 ? `<div class="result-box ${doneCount===mp_items.length?'final':'prelim'}" style="margin:10px 0 14px;">
+    <div class="label">Mise en place — ${fmtDateShort(cu_workingDate)}</div>
+    <div class="value" style="font-size:17px;">${doneCount} / ${mp_items.length}</div>
+  </div>` : '';
+
+  const list = mp_items.length===0
+    ? `<div class="empty-state">${isAdmin ? "Aucun élément dans la liste. Ajoutez-en via « Gérer la liste »." : "Aucun élément de mise en place défini pour l'instant."}</div>`
+    : mp_items.map(it=>{
+      const entry = entries[it.id];
+      const checked = entry && entry.checked;
+      return `<label class="movement-row" style="cursor:pointer;${checked?'opacity:0.6;':''}">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="checkbox" style="width:18px;height:18px;" ${checked?'checked':''} onchange="mp_toggle('${it.id}',this.checked)" />
+          <div>
+            <div style="font-weight:500;text-decoration:${checked?'line-through':'none'};">${esc(it.nom)}</div>
+            ${checked?`<div class="sub">✓ par ${esc(entry.checkedBy||'')}</div>`:''}
+          </div>
+        </div>
+      </label>`;
+    }).join('');
+
+  return dateBar + manageBox + progress + list;
+}
+function mp_addItem(){
+  const nom = (mp_newItemNom||'').trim();
+  if(!nom) return;
+  mp_itemsCol.doc(uid()).set({ nom, ordre: mp_items.length });
+  mp_newItemNom = '';
+  cu_render();
+}
+async function mp_deleteItem(id){
+  if(!confirm('Supprimer cet élément de la mise en place ?')) return;
+  await mp_itemsCol.doc(id).delete();
+}
 
 initAuth();
 </script>
