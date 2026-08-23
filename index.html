@@ -670,6 +670,9 @@ function showModule(name){
   if(name==='home') renderHome();
   if(name==='users') uu_render();
   if(name==='cuisine' && typeof cu_render==='function') cu_render();
+  if(name==='stock' && typeof st_render==='function') st_render();
+  if(name==='caisse' && typeof ca_render==='function') ca_render();
+  if(name==='depenses' && typeof dp_render==='function') dp_render();
 }
 
 document.getElementById('today-label').textContent =
@@ -1703,16 +1706,19 @@ const DP_TYPES = [
   { id:'AppointDivers', label:'Appoint divers', shortLabel:'Appoint divers', color:'var(--cons)', bg:'var(--cons-bg)', sign:+1 },
   { id:'AppointMoi', label:'Appoint moi → gérant', shortLabel:'Appoint moi', color:'var(--bar)', bg:'var(--bar-bg)', sign:+1 },
   { id:'Recette', label:'Recette encaissée', shortLabel:'Recette', color:'var(--forest)', bg:'var(--moss-bg)', sign:+1 },
-  { id:'Achat', label:'Achat (lié au Stock)', shortLabel:'Achat', color:'var(--amber)', bg:'var(--amber-bg)', sign:-1 },
   { id:'Charge', label:'Charge / Divers', shortLabel:'Charge', color:'var(--rust)', bg:'var(--rust-bg)', sign:-1 },
+  { id:'Achat', label:'Achat (lié au Stock)', shortLabel:'Achat', color:'var(--amber)', bg:'var(--amber-bg)', sign:-1 },
   { id:'Retrait', label:'Retrait gérant → moi', shortLabel:'Retrait', color:'var(--wrap)', bg:'var(--wrap-bg)', sign:-1 },
 ];
 // Types autorisés à la SAISIE d'un nouveau mouvement pour les utilisateurs non-admin.
-// L'admin garde accès à tous les types (DP_TYPES complet).
-const DP_TYPES_NON_ADMIN = ['AppointCaisse', 'AppointDivers', 'Achat', 'Charge'];
+const DP_TYPES_NON_ADMIN = ['AppointCaisse', 'AppointDivers', 'Charge', 'Achat'];
+// "Retrait" n'est plus proposé à la création pour PERSONNE (admin compris) : à enregistrer
+// désormais comme une Charge avec un commentaire. On garde sa définition dans DP_TYPES
+// uniquement pour continuer à afficher correctement les mouvements "Retrait" déjà enregistrés.
 function dp_allowedTypes(){
-  if(session && session.isAdmin) return DP_TYPES;
-  return DP_TYPES.filter(t=>DP_TYPES_NON_ADMIN.includes(t.id));
+  const creatable = DP_TYPES.filter(t=>t.id!=='Retrait');
+  if(session && session.isAdmin) return creatable;
+  return creatable.filter(t=>DP_TYPES_NON_ADMIN.includes(t.id));
 }
 function dp_typeMeta(id){
   if(id==='Appoint') id = 'AppointCaisse'; // compatibilité avec d'anciens mouvements déjà enregistrés
@@ -1934,9 +1940,10 @@ function dp_renderTableauTab(){
 }
 
 function dp_renderMouvementsTab(){
-  let filtered = dp_typeFilter==='Tous' ? dp_mouvements : dp_mouvements.filter(m=>m.type===dp_typeFilter);
-  if(dp_dateFilterStart) filtered = filtered.filter(m=>m.date>=dp_dateFilterStart);
-  if(dp_dateFilterEnd) filtered = filtered.filter(m=>m.date<=dp_dateFilterEnd);
+  const isAdmin = session && session.isAdmin;
+  let filtered = dp_typeFilter==='Tous' ? dp_mouvements : dp_mouvements.filter(m=> (dp_typeMeta(m.type).sign>0 ? 'in' : 'out') === dp_typeFilter);
+  if(isAdmin && dp_dateFilterStart) filtered = filtered.filter(m=>m.date>=dp_dateFilterStart);
+  if(isAdmin && dp_dateFilterEnd) filtered = filtered.filter(m=>m.date<=dp_dateFilterEnd);
   if(dp_searchTerm.trim()){
     const q = dp_searchTerm.trim().toLowerCase();
     filtered = filtered.filter(m=>{
@@ -1948,25 +1955,23 @@ function dp_renderMouvementsTab(){
 
   // Le solde théorique tient compte UNIQUEMENT du filtre par date (indépendamment du type/recherche),
   // conformément à la demande : seules les entrées/sorties des dates sélectionnées comptent.
-  const hasDateFilterForSolde = !!(dp_dateFilterStart || dp_dateFilterEnd);
-  let mouvementsPourSolde = dp_mouvements;
-  if(dp_dateFilterStart) mouvementsPourSolde = mouvementsPourSolde.filter(m=>m.date>=dp_dateFilterStart);
-  if(dp_dateFilterEnd) mouvementsPourSolde = mouvementsPourSolde.filter(m=>m.date<=dp_dateFilterEnd);
-  const solde = dp_computeSolde(mouvementsPourSolde);
-  const closureForRange = (dp_dateFilterStart && dp_dateFilterEnd) ? dp_closureFor(dp_dateFilterStart, dp_dateFilterEnd) : null;
+  // Réservé à l'admin (le filtre par date lui-même est admin-only).
+  let soldeBox = '';
+  if(isAdmin){
+    const hasDateFilterForSolde = !!(dp_dateFilterStart || dp_dateFilterEnd);
+    let mouvementsPourSolde = dp_mouvements;
+    if(dp_dateFilterStart) mouvementsPourSolde = mouvementsPourSolde.filter(m=>m.date>=dp_dateFilterStart);
+    if(dp_dateFilterEnd) mouvementsPourSolde = mouvementsPourSolde.filter(m=>m.date<=dp_dateFilterEnd);
+    const solde = dp_computeSolde(mouvementsPourSolde);
+    const closureForRange = (dp_dateFilterStart && dp_dateFilterEnd) ? dp_closureFor(dp_dateFilterStart, dp_dateFilterEnd) : null;
+    soldeBox = `<div class="result-box ${solde>=0?'final':'prelim'}" style="margin-bottom:14px;">
+      <div class="label">${hasDateFilterForSolde ? `Solde théorique — ${dp_dateFilterStart?fmtDateShort(dp_dateFilterStart):'…'} → ${dp_dateFilterEnd?fmtDateShort(dp_dateFilterEnd):'…'}` : 'Solde théorique enregistré'}</div>
+      <div class="value">${dp_fmtMoney(solde)}</div>
+      ${closureForRange ? `<div style="font-size:11px;color:var(--forest);margin-top:4px;">🔒 Période clôturée le ${fmtDateShort(closureForRange.clotureLe.slice(0,10))} par ${esc(closureForRange.clotureParEn)}</div>` : ''}
+    </div>`;
+  }
 
-  const soldeBox = `<div class="result-box ${solde>=0?'final':'prelim'}" style="margin-bottom:14px;">
-    <div class="label">${hasDateFilterForSolde ? `Solde théorique — ${dp_dateFilterStart?fmtDateShort(dp_dateFilterStart):'…'} → ${dp_dateFilterEnd?fmtDateShort(dp_dateFilterEnd):'…'}` : 'Solde théorique enregistré'}</div>
-    <div class="value">${dp_fmtMoney(solde)}</div>
-    ${closureForRange ? `<div style="font-size:11px;color:var(--forest);margin-top:4px;">🔒 Période clôturée le ${fmtDateShort(closureForRange.clotureLe.slice(0,10))} par ${esc(closureForRange.clotureParEn)}</div>` : ''}
-  </div>`;
-
-  const workingDateClosure = dp_closureFor(dp_workingDate);
-  const dateBar = `<div class="ticket" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-    <div class="field" style="flex:1;min-width:150px;"><label>Date de saisie</label><input type="date" id="dp-working-date" value="${dp_workingDate}" onchange="dp_workingDate=this.value;dp_render()" /></div>
-    <button class="btn" onclick="dp_editingMouvId=null;dp_editPrefill=null;dp_showMouvForm=!dp_showMouvForm;dp_render()">+ Mouvement</button>
-  </div>${workingDateClosure ? `<div class="ticket" style="border-color:var(--rust);padding:10px 14px;font-size:12px;color:var(--rust);">🔒 Cette date fait partie d'une période clôturée (${fmtDateShort(workingDateClosure.dateDebut)} → ${fmtDateShort(workingDateClosure.dateFin)}). Réouvrez-la dans l'onglet Clôtures pour ajouter ou modifier un mouvement.</div>` : ''}`;
-
+  const addBar = !dp_showMouvForm ? `<button class="btn" style="width:100%;justify-content:center;padding:14px;font-size:15px;" onclick="dp_editingMouvId=null;dp_editPrefill=null;dp_showMouvForm=true;dp_render()">Ajouter</button>` : '';
 
   const form = dp_showMouvForm ? dp_renderMouvForm() : '';
 
@@ -1989,7 +1994,7 @@ function dp_renderMouvementsTab(){
         </div>`;
       }).join('')}
       <div style="font-size:12.5px;color:var(--ink-muted);margin:8px 0 10px;">Effet sur le solde : ${dp_computeSolde(dp_draft)>=0?'+':''}${dp_fmtMoney(dp_computeSolde(dp_draft))}</div>
-      <button class="btn" onclick="dp_saveDraftDay()">✓ Enregistrer la journée (${dp_draft.length} mouvement(s))</button>
+      <button class="btn" onclick="dp_saveDraftDay()">✓ Valider la journée (${dp_draft.length} mouvement(s))</button>
     </div>
   ` : '';
 
@@ -2001,17 +2006,18 @@ function dp_renderMouvementsTab(){
 
   const filterChips = `<h2 class="section">Mouvements déjà enregistrés</h2>
     <div class="ticket" style="padding:10px 14px;margin-bottom:10px;">
-      <div class="search-wrap" style="margin-bottom:10px;"><span class="icon">🔎</span><input type="text" id="dp-search" placeholder="Rechercher (motif, fournisseur, article, employé, saisi par…)" value="${esc(dp_searchTerm)}" oninput="dp_searchTerm=this.value;dp_render()" /></div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div class="search-wrap" style="${isAdmin?'margin-bottom:10px;':''}"><span class="icon">🔎</span><input type="text" id="dp-search" placeholder="Rechercher (motif, fournisseur, article, employé, saisi par…)" value="${esc(dp_searchTerm)}" oninput="dp_searchTerm=this.value;dp_render()" /></div>
+      ${isAdmin ? `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <div class="field" style="flex:1;min-width:130px;margin:0;"><label>Du</label><input type="date" id="dp-date-filter-start" value="${dp_dateFilterStart}" onchange="dp_dateFilterStart=this.value;dp_render()" /></div>
         <div class="field" style="flex:1;min-width:130px;margin:0;"><label>Au</label><input type="date" id="dp-date-filter-end" value="${dp_dateFilterEnd}" onchange="dp_dateFilterEnd=this.value;dp_render()" /></div>
         ${(hasDateFilter||dp_searchTerm) ? `<button class="btn ghost small" onclick="dp_dateFilterStart='';dp_dateFilterEnd='';dp_searchTerm='';dp_render()">✕ Effacer</button>` : ''}
-      </div>
+      </div>` : ''}
     </div>
-    ${(hasDateFilter||dp_searchTerm) ? `<div style="font-size:12px;color:var(--forest);margin-bottom:8px;">${dateFilterSummary}${dateFilterSummary&&dp_searchTerm?' · ':''}${dp_searchTerm?`recherche « ${esc(dp_searchTerm)} »`:''} — ${sorted.length} mouvement(s)</div>` : ''}
+    ${((isAdmin&&hasDateFilter)||dp_searchTerm) ? `<div style="font-size:12px;color:var(--forest);margin-bottom:8px;">${isAdmin?dateFilterSummary:''}${isAdmin&&dateFilterSummary&&dp_searchTerm?' · ':''}${dp_searchTerm?`recherche « ${esc(dp_searchTerm)} »`:''} — ${sorted.length} mouvement(s)</div>` : ''}
     <div class="filter-row">
     <button class="filter-chip ${dp_typeFilter==='Tous'?'active':''}" style="${dp_typeFilter==='Tous'?'background:var(--forest);border-color:var(--forest);color:#fff;':''}" onclick="dp_typeFilter='Tous';dp_render()">Tous</button>
-    ${DP_TYPES.map(t=>`<button class="filter-chip ${dp_typeFilter===t.id?'active':''}" style="${dp_typeFilter===t.id?`background:${t.color};border-color:${t.color};color:#fff;`:''}" onclick="dp_typeFilter='${t.id}';dp_render()">${esc(t.shortLabel)}</button>`).join('')}
+    <button class="filter-chip ${dp_typeFilter==='in'?'active':''}" style="${dp_typeFilter==='in'?'background:var(--moss);border-color:var(--moss);color:#fff;':''}" onclick="dp_typeFilter='in';dp_render()">↓ Entrée</button>
+    <button class="filter-chip ${dp_typeFilter==='out'?'active':''}" style="${dp_typeFilter==='out'?'background:var(--rust);border-color:var(--rust);color:#fff;':''}" onclick="dp_typeFilter='out';dp_render()">↑ Sortie</button>
   </div>`;
 
   const list = sorted.length===0 ? `<p style="font-size:13px;color:var(--ink-muted);">Aucun mouvement.</p>` :
@@ -2031,7 +2037,7 @@ function dp_renderMouvementsTab(){
       </div>`;
     }).join('');
 
-  return soldeBox + dateBar + form + draftBox + filterChips + list;
+  return soldeBox + addBar + form + draftBox + filterChips + list;
 }
 
 function dp_openEditMouv(id){
@@ -2072,11 +2078,17 @@ function dp_renderMouvForm(){
   const typesIn = allowedTypes.filter(t=>t.sign>0);
   const typesOut = allowedTypes.filter(t=>t.sign<0);
   const isAdminForm = session && session.isAdmin;
+  const workingDateClosure = dp_closureFor(dp_workingDate);
   return `
     <div class="ticket" id="dp-form" style="padding:18px;${isEditing?'border-color:var(--forest);':''}">
       ${isEditing ? `<div style="font-size:12.5px;font-weight:700;color:var(--forest);margin-bottom:10px;">✏️ Modification du mouvement du ${fmtDateShort(E.date)}</div>` : ''}
       <div class="form-section">
-        <div class="section-label"><span class="num">1</span>Type de mouvement</div>
+        <div class="section-label"><span class="num">1</span>Date</div>
+        <div class="field"><input type="date" id="dp-working-date" value="${dp_workingDate}" onchange="dp_workingDate=this.value;dp_render()" /></div>
+        ${workingDateClosure ? `<div style="margin-top:8px;font-size:12px;color:var(--rust);">🔒 Cette date fait partie d'une période clôturée (${fmtDateShort(workingDateClosure.dateDebut)} → ${fmtDateShort(workingDateClosure.dateFin)}). Réouvrez-la dans l'onglet Clôtures pour ajouter ou modifier un mouvement.</div>` : ''}
+      </div>
+      <div class="form-section">
+        <div class="section-label"><span class="num">2</span>Type de mouvement</div>
         <div class="grid grid-2" style="gap:8px;margin-bottom:12px;">
           <button type="button" onclick="dp_setDirection('in')" style="padding:14px;border-radius:8px;border:2px solid ${direction==='in'?'var(--moss)':'var(--line)'};background:${direction==='in'?'var(--moss-bg)':'var(--surface)'};text-align:left;cursor:pointer;">
             <div style="font-weight:700;font-size:14px;color:${direction==='in'?'var(--moss)':'var(--ink)'};">↓ Entrée d'argent</div>
@@ -2084,17 +2096,19 @@ function dp_renderMouvForm(){
           </button>
           <button type="button" onclick="dp_setDirection('out')" style="padding:14px;border-radius:8px;border:2px solid ${direction==='out'?'var(--rust)':'var(--line)'};background:${direction==='out'?'var(--rust-bg)':'var(--surface)'};text-align:left;cursor:pointer;">
             <div style="font-weight:700;font-size:14px;color:${direction==='out'?'var(--rust)':'var(--ink)'};">↑ Sortie d'argent</div>
-            <div style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${isAdminForm?'Achat, charge, retrait':'Achat, charge'}</div>
+            <div style="font-size:11px;color:var(--ink-muted);margin-top:2px;">Achat, charge</div>
           </button>
         </div>
-        ${(direction==='in'?typesIn:typesOut).length>1 ? `<div class="filter-row" style="margin:0;">
-          ${(direction==='in'?typesIn:typesOut).map(t=>`<button type="button" class="filter-chip ${dp_formType===t.id?'active':''}" style="${dp_formType===t.id?`background:${t.color};border-color:${t.color};color:#fff;`:''}" onclick="dp_formType='${t.id}';dp_render()">${esc(t.label)}</button>`).join('')}
+        ${(direction==='in'?typesIn:typesOut).length>1 ? `<div class="grid grid-2" style="gap:8px;">
+          ${(direction==='in'?typesIn:typesOut).map(t=>`<button type="button" onclick="dp_formType='${t.id}';dp_render()" style="padding:14px;border-radius:8px;border:2px solid ${dp_formType===t.id?t.color:'var(--line)'};background:${dp_formType===t.id?t.bg:'var(--surface)'};text-align:left;cursor:pointer;">
+            <div style="font-weight:700;font-size:14px;color:${dp_formType===t.id?t.color:'var(--ink)'};">${esc(t.label)}</div>
+          </button>`).join('')}
         </div>` : ''}
       </div>
 
       ${dp_formType==='Achat' ? `
         <div class="form-section">
-          <div class="section-label"><span class="num">2</span>Article et quantité</div>
+          <div class="section-label"><span class="num">3</span>Article et quantité</div>
           <div class="grid grid-2">
             <div class="field" style="grid-column:1/-1;"><label>Article (liste Stock — comptabilisés uniquement)</label>
               ${hasEligibleArticles
@@ -2117,7 +2131,7 @@ function dp_renderMouvForm(){
           </div>
         </div>
         <div class="form-section">
-          <div class="section-label"><span class="num">3</span>Compléments (optionnel)</div>
+          <div class="section-label"><span class="num">4</span>Compléments (optionnel)</div>
           <div class="grid grid-2">
             <div class="field"><label>Fournisseur</label><input type="text" id="dp-fourn" value="${esc(E.type==='Achat'?(E.fournisseur||E.stockEntry&&E.stockEntry.fournisseur||''):'')}" /></div>
             <div class="field"><label>Date péremption</label><input type="date" id="dp-dlc" value="${E.type==='Achat'&&E.stockEntry?esc(E.stockEntry.datePeremption||''):''}" /></div>
@@ -2126,7 +2140,7 @@ function dp_renderMouvForm(){
         </div>
       ` : `
         <div class="form-section">
-          <div class="section-label"><span class="num">2</span>Montant et détail</div>
+          <div class="section-label"><span class="num">3</span>Montant et détail</div>
           <div class="grid grid-2">
             <div class="field"><label>Montant (DA)</label><input type="text" inputmode="decimal" id="dp-montant" placeholder="0" value="${(E.type&&E.type!=='Achat'&&E.montant!=null)?esc(String(E.montant)):''}" /></div>
             <div class="field"><label>${dp_formType==='Charge'?'Motif / catégorie':'Note (optionnel)'}</label>
@@ -2137,7 +2151,7 @@ function dp_renderMouvForm(){
         </div>
         ${dp_formType==='Charge' ? `
           <div class="form-section">
-            <div class="section-label"><span class="num">3</span>Options complémentaires</div>
+            <div class="section-label"><span class="num">4</span>Options complémentaires</div>
             <div style="display:flex;align-items:center;gap:8px;">
               <input type="checkbox" id="dp-isavance" style="width:auto;" ${E.estAvanceSalaire?'checked':''} onchange="document.getElementById('dp-avance-wrap').style.display=this.checked?'flex':'none'" />
               <label style="text-transform:none;font-size:12.5px;font-weight:500;color:var(--ink);">Ceci est une avance / un acompte sur salaire</label>
@@ -2150,9 +2164,15 @@ function dp_renderMouvForm(){
           </div>
         ` : ''}
       `}
-      <div style="display:flex;gap:8px;margin-top:6px;">
-        <button class="btn" onclick="dp_submitMouv()">${isEditing ? '✓ Enregistrer les modifications' : 'Ajouter et continuer'}</button>
-        <button class="btn ghost" onclick="${isEditing?'dp_cancelEditMouv()':'dp_showMouvForm=false;dp_render()'}">${isEditing?'Annuler la modification':'Terminer la saisie'}</button>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:14px;">
+        ${isEditing ? `
+          <button class="btn" onclick="dp_submitMouv()">✓ Enregistrer les modifications</button>
+          <button class="btn ghost" onclick="dp_cancelEditMouv()">Annuler la modification</button>
+        ` : `
+          <button onclick="dp_submitMouv()" title="Ajouter cette saisie et passer à la suivante" style="width:52px;height:52px;flex-shrink:0;border-radius:50%;border:none;background:var(--forest);color:#fff;font-size:26px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+          <div style="font-size:11.5px;color:var(--ink-muted);flex:1;">Ajoutez cette saisie, puis enchaînez la suivante.</div>
+          <button class="btn ghost small" onclick="dp_showMouvForm=false;dp_render()">Fermer</button>
+        `}
       </div>
     </div>
   `;
@@ -2545,9 +2565,13 @@ let ku_manageMode = false;
 let ku_showItemForm = false;
 let ku_editingItemId = null;
 let ku_itemForm = { nom:'', categorie:'Ingrédient', seuil:'', unite:'', assignedTo:[] };
+let ku_showBulkImport = false;
+let ku_bulkText = '';
 let mp_manageMode = false;
 let mp_showItemForm = false;
 let mp_newItemNom = '';
+let mp_showBulkImport = false;
+let mp_bulkText = '';
 
 ku_itemsCol.onSnapshot(snap=>{
   ku_items = snap.docs.map(d=>({ id:d.id, ...d.data() }));
@@ -2570,6 +2594,7 @@ mp_checksCol.onSnapshot(snap=>{
 
 function cu_setTab(t){ cu_currentTab = t; cu_render(); }
 function cu_render(){
+  if(!session) return; // pas encore connecté : rien à afficher tant qu'il n'y a pas de session
   document.getElementById('cuisine-tabs').innerHTML = `
     <button class="${cu_currentTab==='ingredients'?'active':''}" onclick="cu_setTab('ingredients')">🧺 Ingrédients</button>
     <button class="${cu_currentTab==='miseenplace'?'active':''}" onclick="cu_setTab('miseenplace')">🍱 Mise en place</button>
@@ -2581,6 +2606,7 @@ function cu_render(){
 
 /* ---------------- Onglet Ingrédients (checklist du soir, assignée par cuisinier) ---------------- */
 function ku_myItems(){
+  if(!session) return [];
   return ku_items.filter(it => (it.assignedTo||[]).includes(session.username));
 }
 function ku_computeStatus(item, qty){
@@ -2693,6 +2719,17 @@ function ku_renderTab(){
 
 function ku_renderManageForm(){
   const cooks = usersCache.filter(u=>!u.isAdmin || u.isAdmin); // tous les utilisateurs (admin inclus, on peut s'auto-assigner)
+  const bulkImportBox = `<div class="ticket" style="border-color:var(--forest);">
+    <div class="row-between" style="margin-bottom:${ku_showBulkImport?'10px':'0'};">
+      <div style="font-size:13px;font-weight:700;color:var(--forest);">📋 Import en masse</div>
+      <button style="background:none;border:none;color:var(--forest);font-size:12px;font-weight:600;cursor:pointer;" onclick="ku_showBulkImport=!ku_showBulkImport;cu_render()">${ku_showBulkImport?'Fermer':'Ouvrir'}</button>
+    </div>
+    ${ku_showBulkImport ? `
+      <div style="font-size:11.5px;color:var(--ink-muted);margin-bottom:8px;">Une ligne par article, format : <code>Nom | Catégorie | Seuil | Unité</code><br/>Catégorie = Ingrédient ou Préparation. Les articles seront ajoutés sans assignation (à faire ensuite).</div>
+      <textarea id="ku-bulk-text" rows="8" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:'IBM Plex Mono',monospace;" placeholder="Nori | Ingrédient | 5 | paquets&#10;Sauce gyoza | Préparation | 1 | litres">${esc(ku_bulkText)}</textarea>
+      <button class="btn moss" style="margin-top:10px;" onclick="ku_bulkImport()">📋 Importer ces articles</button>
+    ` : ''}
+  </div>`;
   const openForm = ku_showItemForm ? `
     <div class="ticket" style="padding:16px;">
       <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--forest);">${ku_editingItemId ? "Modifier l'article" : 'Nouvel article à checker'}</div>
@@ -2736,7 +2773,28 @@ function ku_renderManageForm(){
     `).join('')}
   </div>`;
 
-  return `<div class="ticket" style="background:var(--paper);">${openForm}${list}</div>`;
+  return `<div class="ticket" style="background:var(--paper);">${openForm}${list}</div>${bulkImportBox}`;
+}
+async function ku_bulkImport(){
+  const raw = document.getElementById('ku-bulk-text').value || '';
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(lines.length===0){ alert('Collez au moins une ligne.'); return; }
+  let count = 0;
+  for(const line of lines){
+    const parts = line.split('|').map(p=>p.trim());
+    const nom = parts[0];
+    if(!nom) continue;
+    const catRaw = (parts[1]||'Ingrédient').toLowerCase();
+    const categorie = catRaw.startsWith('pr') ? 'Préparation' : 'Ingrédient';
+    const seuil = parts[2] ? ku_parseNum(parts[2]) : 0;
+    const unite = parts[3] || '';
+    await ku_itemsCol.doc(uid()).set({ nom, categorie, seuil, unite, assignedTo: [] });
+    count++;
+  }
+  ku_bulkText = '';
+  ku_showBulkImport = false;
+  alert(`${count} article(s) importé(s). Assignez-les ensuite à vos cuisiniers en modifiant chaque article.`);
+  cu_render();
 }
 function ku_openItemForm(id){
   ku_editingItemId = id || null;
@@ -2812,6 +2870,17 @@ function mp_renderTab(){
         `).join('') || `<p style="font-size:12px;color:var(--ink-muted);">Aucun élément pour l'instant.</p>`}
       </div>
     </div>
+    <div class="ticket" style="border-color:var(--forest);">
+      <div class="row-between" style="margin-bottom:${mp_showBulkImport?'10px':'0'};">
+        <div style="font-size:13px;font-weight:700;color:var(--forest);">📋 Import en masse</div>
+        <button style="background:none;border:none;color:var(--forest);font-size:12px;font-weight:600;cursor:pointer;" onclick="mp_showBulkImport=!mp_showBulkImport;cu_render()">${mp_showBulkImport?'Fermer':'Ouvrir'}</button>
+      </div>
+      ${mp_showBulkImport ? `
+        <div style="font-size:11.5px;color:var(--ink-muted);margin-bottom:8px;">Un élément par ligne.</div>
+        <textarea id="mp-bulk-text" rows="8" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:'IBM Plex Mono',monospace;" placeholder="Cuire le riz&#10;Découper le saumon">${esc(mp_bulkText)}</textarea>
+        <button class="btn moss" style="margin-top:10px;" onclick="mp_bulkImport()">📋 Importer ces éléments</button>
+      ` : ''}
+    </div>
   ` : '';
 
   const progress = mp_items.length>0 ? `<div class="result-box ${doneCount===mp_items.length?'final':'prelim'}" style="margin:10px 0 14px;">
@@ -2842,6 +2911,20 @@ function mp_addItem(){
   if(!nom) return;
   mp_itemsCol.doc(uid()).set({ nom, ordre: mp_items.length });
   mp_newItemNom = '';
+  cu_render();
+}
+async function mp_bulkImport(){
+  const raw = document.getElementById('mp-bulk-text').value || '';
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(lines.length===0){ alert('Collez au moins une ligne.'); return; }
+  let count = mp_items.length;
+  for(const nom of lines){
+    await mp_itemsCol.doc(uid()).set({ nom, ordre: count });
+    count++;
+  }
+  mp_bulkText = '';
+  mp_showBulkImport = false;
+  alert(`${lines.length} élément(s) importé(s).`);
   cu_render();
 }
 async function mp_deleteItem(id){
