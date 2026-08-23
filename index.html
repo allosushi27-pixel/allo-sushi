@@ -1701,6 +1701,15 @@ const dp_mouvCol = db.collection('depenses_mouvements');
 const dp_pointagesCol = db.collection('depenses_pointages');
 const dp_cloturesCol = db.collection('depenses_clotures');
 
+const EMPLOYES_PAR_SERVICE = {
+  'Cuisinier': ['Mejdoub','Ali','Kadi','Faiza','Nabil','Fatah'],
+  'Bar': ['Meriem','Marwa'],
+  'Service': ['Rahma','Hamid','Raouf'],
+  'Caisse': ['Racha','Hadil'],
+  'Ménage': ['Nacira','Fatima'],
+};
+const EMPLOYES_TOUS = Object.values(EMPLOYES_PAR_SERVICE).flat();
+
 const DP_TYPES = [
   { id:'AppointCaisse', label:'Appoint caisse → gérant', shortLabel:'Appoint caisse', color:'var(--moss)', bg:'var(--moss-bg)', sign:+1 },
   { id:'AppointDivers', label:'Appoint divers', shortLabel:'Appoint divers', color:'var(--cons)', bg:'var(--cons-bg)', sign:+1 },
@@ -1778,6 +1787,9 @@ let dp_dashCustomEnd = todayISO();
 let dp_achatCalcMode = 'prix';
 let dp_editingMouvId = null;
 let dp_editPrefill = null;
+let dp_avanceNomFilter = 'Tous';
+let dp_avanceDateStart = '';
+let dp_avanceDateEnd = '';
 let dp_clotures = [];
 let dp_clotureStart = '';
 let dp_clotureEnd = '';
@@ -2069,10 +2081,7 @@ function dp_renderMouvForm(){
   const isEditing = !!dp_editingMouvId;
   const articleDatalist = (st_state.articles||[]).filter(a=>a.achatGerant!==false).map(a=>`<option value="${esc(a.nom)}">`).join('');
   const hasEligibleArticles = (st_state.articles||[]).some(a=>a.achatGerant!==false);
-  const employeeNames = [...new Set(dp_mouvements.filter(m=>m.estAvanceSalaire && m.employeNom).map(m=>m.employeNom))];
-  const employeeSuggestions = employeeNames.map(n=>`<option value="${esc(n)}">`).join('');
-  const chargeLibelles = [...new Set(dp_mouvements.filter(m=>m.type==='Charge' && m.libelle).map(m=>m.libelle))];
-  const chargeLibelleSuggestions = chargeLibelles.map(n=>`<option value="${esc(n)}">`).join('');
+  const employeeSuggestions = EMPLOYES_TOUS.map(n=>`<option value="${esc(n)}">`).join('');
   const direction = dp_typeMeta(dp_formType).sign > 0 ? 'in' : 'out';
   const allowedTypes = dp_allowedTypes();
   const typesIn = allowedTypes.filter(t=>t.sign>0);
@@ -2144,8 +2153,7 @@ function dp_renderMouvForm(){
           <div class="grid grid-2">
             <div class="field"><label>Montant (DA)</label><input type="text" inputmode="decimal" id="dp-montant" placeholder="0" value="${(E.type&&E.type!=='Achat'&&E.montant!=null)?esc(String(E.montant)):''}" /></div>
             <div class="field"><label>${dp_formType==='Charge'?'Motif / catégorie':'Note (optionnel)'}</label>
-              <input type="text" id="dp-libelle" placeholder="${dp_formType==='Charge'?'Ex. Loyer, Carburant…':'Ex. Appoint du matin'}" value="${esc(E.type&&E.type!=='Achat'?(E.libelle||''):'')}" ${dp_formType==='Charge'?'list="dp-libelle-datalist"':''} />
-              ${dp_formType==='Charge'?`<datalist id="dp-libelle-datalist">${chargeLibelleSuggestions}</datalist>`:''}
+              <input type="text" id="dp-libelle" placeholder="${dp_formType==='Charge'?'Ex. Loyer, Carburant…':'Ex. Appoint du matin'}" value="${esc(E.type&&E.type!=='Achat'?(E.libelle||''):'')}" />
             </div>
           </div>
         </div>
@@ -2423,9 +2431,32 @@ async function dp_submitPointage(){
 
 /* ---------------- Onglet Avances salaire ---------------- */
 function dp_renderAvancesTab(){
-  const avances = dp_mouvements.filter(m=>m.type==='Charge' && m.estAvanceSalaire).sort((a,b)=>a.date<b.date?1:-1);
+  let avances = dp_mouvements.filter(m=>m.type==='Charge' && m.estAvanceSalaire).sort((a,b)=>a.date<b.date?1:-1);
+
+  const filterBar = `<div class="ticket" style="padding:12px 14px;margin-bottom:12px;">
+    <div class="field" style="margin-bottom:10px;"><label>Employé</label>
+      <select id="dp-avance-nom-filter" onchange="dp_avanceNomFilter=this.value;dp_render()">
+        <option value="Tous" ${dp_avanceNomFilter==='Tous'?'selected':''}>Tous les employés</option>
+        ${Object.keys(EMPLOYES_PAR_SERVICE).map(service=>`
+          <optgroup label="${esc(service)}">
+            ${EMPLOYES_PAR_SERVICE[service].map(nom=>`<option value="${esc(nom)}" ${dp_avanceNomFilter===nom?'selected':''}>${esc(nom)}</option>`).join('')}
+          </optgroup>
+        `).join('')}
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div class="field" style="flex:1;min-width:130px;margin:0;"><label>Du</label><input type="date" id="dp-avance-date-start" value="${dp_avanceDateStart}" onchange="dp_avanceDateStart=this.value;dp_render()" /></div>
+      <div class="field" style="flex:1;min-width:130px;margin:0;"><label>Au</label><input type="date" id="dp-avance-date-end" value="${dp_avanceDateEnd}" onchange="dp_avanceDateEnd=this.value;dp_render()" /></div>
+      ${(dp_avanceNomFilter!=='Tous'||dp_avanceDateStart||dp_avanceDateEnd) ? `<button class="btn ghost small" onclick="dp_avanceNomFilter='Tous';dp_avanceDateStart='';dp_avanceDateEnd='';dp_render()">✕ Effacer</button>` : ''}
+    </div>
+  </div>`;
+
+  if(dp_avanceNomFilter!=='Tous') avances = avances.filter(a=>a.employeNom===dp_avanceNomFilter);
+  if(dp_avanceDateStart) avances = avances.filter(a=>a.date>=dp_avanceDateStart);
+  if(dp_avanceDateEnd) avances = avances.filter(a=>a.date<=dp_avanceDateEnd);
+
   if(avances.length===0){
-    return `<div class="empty-state">Aucune avance sur salaire enregistrée pour l'instant.<br/><span style="font-size:11.5px;">Coche "Ceci est une avance / un acompte sur salaire" en créant une Charge pour qu'elle apparaisse ici.</span></div>`;
+    return filterBar + `<div class="empty-state">Aucune avance sur salaire ${(dp_avanceNomFilter!=='Tous'||dp_avanceDateStart||dp_avanceDateEnd)?'ne correspond à ces filtres':"enregistrée pour l'instant"}.<br/><span style="font-size:11.5px;">Coche "Ceci est une avance / un acompte sur salaire" en créant une Charge pour qu'elle apparaisse ici.</span></div>`;
   }
   const parEmploye = {};
   avances.forEach(a=>{
@@ -2443,7 +2474,7 @@ function dp_renderAvancesTab(){
       </div>
     `).join('')}
     <div class="row-between" style="padding:8px 0 0;margin-top:6px;border-top:1px solid var(--line);font-size:13px;font-weight:700;">
-      <span>Total général</span>
+      <span>Total ${(dp_avanceNomFilter!=='Tous'||dp_avanceDateStart||dp_avanceDateEnd)?'(filtré)':'général'}</span>
       <span class="mono">${dp_fmtMoney(totalGeneral)}</span>
     </div>
   </div>`;
@@ -2458,7 +2489,7 @@ function dp_renderAvancesTab(){
     </div>
   `).join('');
 
-  return `<h2 class="section">Récapitulatif des avances sur salaire</h2>` + summary +
+  return filterBar + `<h2 class="section">Récapitulatif des avances sur salaire</h2>` + summary +
     `<h2 class="section">Détail chronologique</h2>` + list;
 }
 
