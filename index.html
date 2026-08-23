@@ -2719,10 +2719,10 @@ function ku_renderTab(){
 
 function ku_renderManageForm(){
   const cooks = usersCache.filter(u=>!u.isAdmin || u.isAdmin); // tous les utilisateurs (admin inclus, on peut s'auto-assigner)
-  const bulkImportBox = `<div class="ticket" style="border-color:var(--forest);">
+  const bulkImportBox = `<div class="ticket" style="border:2px solid var(--forest);background:var(--moss-bg);">
     <div class="row-between" style="margin-bottom:${ku_showBulkImport?'10px':'0'};">
-      <div style="font-size:13px;font-weight:700;color:var(--forest);">📋 Import en masse</div>
-      <button style="background:none;border:none;color:var(--forest);font-size:12px;font-weight:600;cursor:pointer;" onclick="ku_showBulkImport=!ku_showBulkImport;cu_render()">${ku_showBulkImport?'Fermer':'Ouvrir'}</button>
+      <div style="font-size:14px;font-weight:800;color:var(--forest);">📋 Import en masse (recommandé)</div>
+      <button class="btn moss small" onclick="ku_showBulkImport=!ku_showBulkImport;cu_render()">${ku_showBulkImport?'Fermer':'Ouvrir'}</button>
     </div>
     ${ku_showBulkImport ? `
       <div style="font-size:11.5px;color:var(--ink-muted);margin-bottom:8px;">Une ligne par article, format : <code>Nom | Catégorie | Seuil | Unité</code><br/>Catégorie = Ingrédient ou Préparation. Les articles seront ajoutés sans assignation (à faire ensuite).</div>
@@ -2773,7 +2773,7 @@ function ku_renderManageForm(){
     `).join('')}
   </div>`;
 
-  return `<div class="ticket" style="background:var(--paper);">${openForm}${list}</div>${bulkImportBox}`;
+  return `${bulkImportBox}<div class="ticket" style="background:var(--paper);margin-top:12px;">${openForm}${list}</div>`;
 }
 async function ku_bulkImport(){
   const raw = document.getElementById('ku-bulk-text').value || '';
@@ -2856,7 +2856,18 @@ function mp_renderTab(){
   </div>`;
 
   const manageBox = (isAdmin && mp_manageMode) ? `
-    <div class="ticket" style="background:var(--paper);">
+    <div class="ticket" style="border:2px solid var(--forest);background:var(--moss-bg);">
+      <div class="row-between" style="margin-bottom:${mp_showBulkImport?'10px':'0'};">
+        <div style="font-size:14px;font-weight:800;color:var(--forest);">📋 Import en masse (recommandé)</div>
+        <button class="btn moss small" onclick="mp_showBulkImport=!mp_showBulkImport;cu_render()">${mp_showBulkImport?'Fermer':'Ouvrir'}</button>
+      </div>
+      ${mp_showBulkImport ? `
+        <div style="font-size:11.5px;color:var(--ink-muted);margin-bottom:8px;">Un élément par ligne.</div>
+        <textarea id="mp-bulk-text" rows="8" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:'IBM Plex Mono',monospace;" placeholder="Cuire le riz&#10;Découper le saumon">${esc(mp_bulkText)}</textarea>
+        <button class="btn moss" style="margin-top:10px;" onclick="mp_bulkImport()">📋 Importer ces éléments</button>
+      ` : ''}
+    </div>
+    <div class="ticket" style="background:var(--paper);margin-top:12px;">
       <div class="grid grid-2" style="margin-bottom:8px;">
         <input type="text" id="mp-new-item" placeholder="Ex. Préparer le riz, sortir le poisson…" value="${esc(mp_newItemNom)}" oninput="mp_newItemNom=this.value" style="grid-column:1/-1;" />
       </div>
@@ -2869,17 +2880,6 @@ function mp_renderTab(){
           </div>
         `).join('') || `<p style="font-size:12px;color:var(--ink-muted);">Aucun élément pour l'instant.</p>`}
       </div>
-    </div>
-    <div class="ticket" style="border-color:var(--forest);">
-      <div class="row-between" style="margin-bottom:${mp_showBulkImport?'10px':'0'};">
-        <div style="font-size:13px;font-weight:700;color:var(--forest);">📋 Import en masse</div>
-        <button style="background:none;border:none;color:var(--forest);font-size:12px;font-weight:600;cursor:pointer;" onclick="mp_showBulkImport=!mp_showBulkImport;cu_render()">${mp_showBulkImport?'Fermer':'Ouvrir'}</button>
-      </div>
-      ${mp_showBulkImport ? `
-        <div style="font-size:11.5px;color:var(--ink-muted);margin-bottom:8px;">Un élément par ligne.</div>
-        <textarea id="mp-bulk-text" rows="8" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:'IBM Plex Mono',monospace;" placeholder="Cuire le riz&#10;Découper le saumon">${esc(mp_bulkText)}</textarea>
-        <button class="btn moss" style="margin-top:10px;" onclick="mp_bulkImport()">📋 Importer ces éléments</button>
-      ` : ''}
     </div>
   ` : '';
 
