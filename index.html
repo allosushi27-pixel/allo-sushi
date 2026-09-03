@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 
   :root{
@@ -230,6 +231,187 @@
 .user-card .uh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
 .user-card .uname{font-weight:700;font-size:14.5px;font-family:'Manrope',sans-serif;}
 .badge-admin{background:var(--bar-bg);color:var(--bar);border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-left:6px;}
+
+
+/* =========================================================
+   SMARTPHONE UX — professional responsive layer
+   Desktop styling is preserved; mobile rules activate <= 600px.
+   ========================================================= */
+@media (max-width:600px){
+  html{font-size:16px;overflow-x:hidden;}
+  body{width:100%;min-width:0;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom);}
+  *{box-sizing:border-box;}
+
+  header.top{
+    padding:12px 14px;
+    gap:10px;
+    min-height:68px;
+    align-items:center;
+  }
+  header.top .title{font-size:16px;}
+  header.top .date{font-size:10px;}
+  header.top #sync-label{font-size:9.5px !important;max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .user-chip{gap:6px;min-width:0;}
+  .user-chip .who{display:none;}
+  .user-chip button{min-height:40px;padding:8px 10px;font-size:11px;border-radius:8px;white-space:nowrap;}
+
+  .module-tabs{
+    padding:0 4px;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
+  .module-tabs::-webkit-scrollbar,nav.tabs::-webkit-scrollbar{display:none;}
+  .module-tabs button{
+    min-height:48px;
+    padding:12px 13px;
+    font-size:12px;
+    gap:5px;
+  }
+  nav.tabs{
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    top:48px;
+    z-index:15;
+  }
+  nav.tabs button{
+    min-height:46px;
+    padding:11px 12px;
+    font-size:12px;
+  }
+
+  main,
+  #module-home main,
+  #module-users main,
+  #caisse-main,
+  #depenses-main{
+    width:100%;
+    max-width:none !important;
+    margin:0 !important;
+    padding:14px 12px 28px !important;
+  }
+
+  h2.section{font-size:11px;margin:16px 0 8px;}
+  .ticket{
+    border-radius:12px;
+    padding:13px;
+    margin-bottom:10px;
+    box-shadow:0 1px 3px rgba(16,24,40,.05);
+  }
+
+  .grid{gap:8px;}
+  .grid-2,.grid-4{grid-template-columns:1fr;}
+  .home-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;}
+  .home-card{padding:16px 9px;min-height:116px;border-radius:12px;display:flex;flex-direction:column;justify-content:center;}
+  .home-card .ic{font-size:23px;margin-bottom:6px;}
+  .home-card .lbl{font-size:12.5px;}
+  .home-card .desc{font-size:10px;line-height:1.35;}
+
+  .field{gap:5px;min-width:0;}
+  .field label{font-size:10px;}
+  input,select,textarea{
+    width:100%;
+    max-width:100%;
+    min-height:44px;
+    padding:10px 11px;
+    font-size:16px !important;
+    border-radius:8px;
+  }
+  textarea{min-height:88px;}
+  input[type="checkbox"],input[type="radio"]{min-height:auto;width:auto;}
+
+  .btn{
+    min-height:44px;
+    padding:10px 13px;
+    border-radius:8px;
+    font-size:13px;
+    justify-content:center;
+  }
+  .btn.small{min-height:40px;padding:8px 11px;font-size:12px;}
+  .actions-row{gap:7px;}
+  .actions-row .btn{flex:1 1 auto;min-width:120px;}
+
+  .top-row{gap:8px;margin-bottom:11px;align-items:stretch;}
+  .top-row > *{min-width:0;}
+  .filter-row{gap:6px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;scrollbar-width:none;}
+  .filter-row::-webkit-scrollbar{display:none;}
+  .filter-row > *{flex:0 0 auto;}
+
+  .result-box{
+    padding:12px 13px;
+    min-height:62px;
+    border-radius:10px;
+    gap:12px;
+  }
+  .result-box .label{font-size:11.5px;line-height:1.3;}
+  .result-box .value{font-size:18px;white-space:nowrap;}
+
+  .stat-value{font-size:18px;}
+  .stat-value.money{font-size:14px;}
+  .stat-label{font-size:10px;}
+
+  .line-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:7px;
+    padding:9px;
+  }
+  .movement-row,.hist-row{padding:11px 12px;gap:10px;}
+  .movement-row > *, .hist-row > *{min-width:0;}
+
+  .perm-row{
+    min-height:52px;
+    gap:12px;
+    padding:9px 0;
+    font-size:12px;
+  }
+  .perm-row span{line-height:1.35;max-width:calc(100% - 52px);}
+  .switch{width:42px;height:24px;}
+  .switch .slider:before{height:18px;width:18px;top:3px;left:3px;}
+  .switch input:checked + .slider:before{transform:translateX(18px);}
+
+  .user-card{padding:12px;border-radius:10px;}
+  .user-card .uh{gap:8px;align-items:flex-start;}
+  .user-card .uname{font-size:13.5px;}
+
+  .mode-toggle{overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;scrollbar-width:none;}
+  .mode-toggle::-webkit-scrollbar{display:none;}
+  .mode-toggle > *{flex:0 0 auto;}
+
+  .time-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+
+  /* Prevent long labels / generated content from breaking the viewport. */
+  .article-head,.assign-top,.row-between{gap:8px;}
+  .article-head > *, .assign-top > *, .row-between > *{min-width:0;}
+  .mono{overflow-wrap:anywhere;}
+
+  /* Tables remain usable when a particular report genuinely needs columns. */
+  table{width:100%;font-size:11px;}
+  .table-wrap,.table-responsive{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* Login */
+  #login-screen{padding:16px;align-items:center;}
+  .login-box{max-width:390px;padding:24px 18px;border-radius:14px;}
+  .login-box .brand{font-size:19px;}
+}
+
+@media (max-width:380px){
+  header.top{padding-left:11px;padding-right:11px;}
+  header.top .title{font-size:15px;}
+  .module-tabs button{padding-left:10px;padding-right:10px;font-size:11.5px;}
+  nav.tabs button{padding-left:10px;padding-right:10px;}
+  main,#module-home main,#module-users main,#caisse-main,#depenses-main{padding-left:10px !important;padding-right:10px !important;}
+  .home-grid{gap:7px;}
+  .home-card{min-height:108px;padding:13px 7px;}
+  .home-card .lbl{font-size:11.5px;}
+}
+
+/* Reduce motion for users who prefer it. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto !important;transition:none !important;animation:none !important;}
+}
 </style>
 </head>
 <body>
@@ -282,16 +464,6 @@
   </main>
 </div>
 
-<div id="module-stock" class="module">
-  <div style="max-width:760px;margin:0 auto;padding:10px 16px 0;display:flex;justify-content:flex-end;">
-    <button class="alert-badge" id="alert-badge" style="display:none" onclick="st_setTab('alerts')">
-      🔔 <span id="alert-count">0</span> alerte(s)
-    </button>
-  </div>
-  <nav class="tabs" id="stock-tabs"></nav>
-  <main id="stock-main"></main>
-</div>
-
 <div id="module-caisse" class="module">
   <nav class="tabs" id="caisse-tabs"></nav>
   <main id="caisse-main"></main>
@@ -300,11 +472,6 @@
 <div id="module-depenses" class="module">
   <nav class="tabs" id="depenses-tabs"></nav>
   <main id="depenses-main"></main>
-</div>
-
-<div id="module-cuisine" class="module">
-  <nav class="tabs" id="cuisine-tabs"></nav>
-  <main id="cuisine-main"></main>
 </div>
 
 <div id="module-users" class="module">
@@ -326,10 +493,10 @@
         <label class="switch"><input type="checkbox" id="nu-admin" onchange="uu_toggleAdminFields()"><span class="slider"></span></label>
       </div>
       <div id="nu-perm-detail">
-        <div class="perm-row"><span>Accès Stock</span><label class="switch"><input type="checkbox" id="nu-perm-stock" checked><span class="slider"></span></label></div>
         <div class="perm-row"><span>Accès Caisse</span><label class="switch"><input type="checkbox" id="nu-perm-caisse" checked><span class="slider"></span></label></div>
         <div class="perm-row"><span>Accès Dépenses</span><label class="switch"><input type="checkbox" id="nu-perm-depenses" checked><span class="slider"></span></label></div>
-        <div class="perm-row"><span>Accès Cuisine</span><label class="switch"><input type="checkbox" id="nu-perm-cuisine" checked><span class="slider"></span></label></div>
+        <div class="perm-row"><span>💵 Saisie du solde réel</span><label class="switch"><input type="checkbox" id="nu-perm-solde-reel" checked><span class="slider"></span></label></div>
+        <div class="perm-row"><span>🔎 Vérification / calcul de l'écart</span><label class="switch"><input type="checkbox" id="nu-perm-verification" checked><span class="slider"></span></label></div>
       </div>
       <button class="btn moss" style="margin-top:14px;" onclick="uu_createUser()">➕ Créer l'utilisateur</button>
     </div>
@@ -343,7 +510,7 @@
 </div><!-- /app-shell -->
 
 <script>
-/* ==================== SOCLE COMMUN (partagé par les 3 modules) ==================== */
+/* ==================== SOCLE COMMUN (partagé par les modules Caisse et Dépenses) ==================== */
 const firebaseConfig = {
   apiKey: "AIzaSyBgc3qo1eYWX2n_tMHkYzg1XUNiVaDi6FE",
   authDomain: "gestion-du-stock-4bd99.firebaseapp.com",
@@ -363,12 +530,10 @@ function askUserName(){ /* obsolète : l'utilisateur est désormais défini via 
 const appUsersCol = db.collection('app_users');
 const SESSION_KEY = 'allosushi-session';
 const MODULE_DEFS = [
-  { key:'stock',    label:'Stock',     ic:'📦', desc:'Articles, entrées, sorties' },
   { key:'caisse',   label:'Caisse',    ic:'💰', desc:'Sessions de caisse' },
   { key:'depenses', label:'Dépenses',  ic:'🧾', desc:'Dépenses & pointages' },
-  { key:'cuisine',  label:'Cuisine',   ic:'🍣', desc:'Checklists ingrédients & mise en place' }
 ];
-let session = null; // { username, isAdmin, permissions:{stock,caisse,depenses} }
+let session = null; // { username, isAdmin, permissions:{caisse,depenses,soldeTheorique,soldeReel,ecart} }
 let usersCache = [];
 let usersSetupMode = false;
 
@@ -424,6 +589,7 @@ async function initAuth(){
 }
 
 function applySession(userDoc){
+  dp_verificationResult = null;
   session = {
     username: userDoc.id,
     displayName: userDoc.username || userDoc.id,
@@ -438,7 +604,7 @@ function applySession(userDoc){
   renderUserChip();
   buildModuleTabs();
   showModule('home');
-  if(session.isAdmin) uu_subscribeUsers();
+  if(session.isAdmin){ uu_subscribeUsers(); dp_startVerificationListener(); }
 }
 
 async function handleAuthSubmit(){
@@ -455,7 +621,7 @@ async function handleAuthSubmit(){
       username: uname,
       password: pwd,
       isAdmin: true,
-      permissions: { stock:true, caisse:true, depenses:true, cuisine:true },
+      permissions: { caisse:true, depenses:true, soldeTheorique:true, soldeReel:true, ecart:true },
       creeLe: new Date().toISOString()
     };
     try{
@@ -545,11 +711,14 @@ async function uu_createUser(){
     username: uname,
     password: pwd,
     isAdmin,
-    permissions: isAdmin ? { stock:true, caisse:true, depenses:true, cuisine:true } : {
-      stock: document.getElementById('nu-perm-stock').checked,
+    permissions: isAdmin ? { caisse:true, depenses:true, soldeTheorique:true, soldeReel:true, ecart:true, verification:true, historiqueVerification:true } : {
       caisse: document.getElementById('nu-perm-caisse').checked,
       depenses: document.getElementById('nu-perm-depenses').checked,
-      cuisine: document.getElementById('nu-perm-cuisine').checked
+      soldeTheorique: false,
+      soldeReel: document.getElementById('nu-perm-solde-reel').checked,
+      ecart: true,
+      verification: document.getElementById('nu-perm-verification').checked,
+      historiqueVerification: false
     },
     creeLe: new Date().toISOString(),
     creePar: currentUser
@@ -558,6 +727,7 @@ async function uu_createUser(){
   document.getElementById('nu-username').value = '';
   document.getElementById('nu-password').value = '';
   document.getElementById('nu-admin').checked = false;
+  document.getElementById('nu-perm-solde-reel').checked = true;
   uu_toggleAdminFields();
 }
 
@@ -566,7 +736,7 @@ async function uu_togglePerm(userId, key, checked){
 }
 async function uu_toggleAdmin(userId, checked){
   const patch = { isAdmin: checked };
-  if(checked) patch.permissions = { stock:true, caisse:true, depenses:true, cuisine:true };
+  if(checked) patch.permissions = { caisse:true, depenses:true, soldeTheorique:true, soldeReel:true, ecart:true, verification:true, historiqueVerification:true };
   await appUsersCol.doc(userId).set(patch, { merge:true });
 }
 async function uu_deleteUser(userId){
@@ -616,6 +786,10 @@ function uu_render(){
           <span class="slider"></span>
         </label>
       </div>`).join('');
+    const soldePermRows = `
+      <div class="perm-row"><span>💵 Saisie du solde réel</span><label class="switch"><input type="checkbox" ${perms.soldeReel!==false?'checked':''} ${u.isAdmin?'disabled':''} onchange="uu_togglePerm('${u.id}','soldeReel',this.checked)"><span class="slider"></span></label></div>
+      <div class="perm-row"><span>🔎 Vérification / calcul de l'écart</span><label class="switch"><input type="checkbox" ${perms.verification!==false?'checked':''} ${u.isAdmin?'disabled':''} onchange="uu_togglePerm('${u.id}','verification',this.checked)"><span class="slider"></span></label></div>
+      <div class="perm-row"><span>📋 Historique des vérifications (admin)</span><label class="switch"><input type="checkbox" ${perms.historiqueVerification===true?'checked':''} ${!u.isAdmin?'disabled':''} onchange="uu_togglePerm('${u.id}','historiqueVerification',this.checked)"><span class="slider"></span></label></div>`;
     return `<div class="user-card">
       <div class="uh">
         <div class="uname">${esc(u.username||u.id)}${u.isAdmin?'<span class="badge-admin">Admin</span>':''}</div>
@@ -629,6 +803,7 @@ function uu_render(){
         <label class="switch"><input type="checkbox" ${u.isAdmin?'checked':''} onchange="uu_toggleAdmin('${u.id}',this.checked)"><span class="slider"></span></label>
       </div>
       ${permRows}
+      ${soldePermRows}
     </div>`;
   }).join('') || `<div class="empty-state">Aucun utilisateur.</div>`;
 }
@@ -669,729 +844,12 @@ function showModule(name){
   });
   if(name==='home') renderHome();
   if(name==='users') uu_render();
-  if(name==='cuisine' && typeof cu_render==='function') cu_render();
-  if(name==='stock' && typeof st_render==='function') st_render();
   if(name==='caisse' && typeof ca_render==='function') ca_render();
   if(name==='depenses' && typeof dp_render==='function') dp_render();
 }
 
 document.getElementById('today-label').textContent =
   new Date().toLocaleDateString('fr-FR',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
-
-/* ==================== MODULE STOCK ==================== */
-const st_docRef = db.collection('stock').doc('data');
-
-
-let st_state = { articles: [], entries: [], exits: [] };
-let st_firebaseReady = false;
-let st_suppressNextRenderFromSnapshot = false;
-
-function st_setSyncLabel(text, color){
-  const el = document.getElementById('sync-label');
-  if(el){ el.textContent = text; if(color) el.style.color = color; }
-}
-
-function st_initFirebaseSync(){
-  st_docRef.onSnapshot(
-    (snap) => {
-      if(snap.exists){
-        const data = snap.data();
-        st_state = { articles: data.articles||[], entries: data.entries||[], exits: data.exits||[] };
-      } else {
-        st_state = { articles: [], entries: [], exits: [] };
-      }
-      st_firebaseReady = true;
-      st_setSyncLabel('✓ Synchronisé', '#B9CFC5');
-      st_render();
-    },
-    (err) => {
-      console.error('Firestore error', err);
-      st_setSyncLabel('⚠ Hors ligne / erreur de connexion', '#F2C6C0');
-    }
-  );
-}
-
-async function st_saveState(){
-  try{
-    st_setSyncLabel('Enregistrement…', '#B9CFC5');
-    await st_docRef.set(st_state);
-    st_setSyncLabel('✓ Synchronisé', '#B9CFC5');
-  }catch(e){
-    console.warn('save error', e);
-    st_setSyncLabel('⚠ Échec de la sauvegarde', '#F2C6C0');
-  }
-}
-
-const st_CATEGORIES = [
-  {id:'Cuisine', label:'Cuisine', color:'var(--forest)', bg:'var(--moss-bg)'},
-  {id:'Bar', label:'Bar', color:'var(--bar)', bg:'var(--bar-bg)'},
-  {id:'Consommables', label:'Consommables', color:'var(--cons)', bg:'var(--cons-bg)'},
-  {id:'Emballages', label:'Emballages', color:'var(--wrap)', bg:'var(--wrap-bg)'},
-];
-const st_UNITS = ['kg','g','L','mL','unité','carton','paquet','bouteille'];
-const st_MOTIFS = ['Cuisine','Bar','Perte','Autre'];
-
-
-function st_catMeta(id){ return st_CATEGORIES.find(c=>c.id===id) || st_CATEGORIES[0]; }
-function st_fmtNum(n){
-  if(n===null||n===undefined||isNaN(n)) return '0';
-  return Number(n).toLocaleString('fr-FR',{maximumFractionDigits:2});
-}
-function st_fmtMoney(n){ return st_fmtNum(n)+' DA'; }
-function st_daysUntil(iso){
-  if(!iso) return null;
-  const d = new Date(iso+'T00:00:00');
-  const t = new Date(todayISO()+'T00:00:00');
-  return Math.round((d-t)/86400000);
-}
-
-/* ---------------- Derived computations ---------------- */
-function st_computeAll(){
-  const byArticle = {};
-  st_state.articles.forEach(art=>{
-    const artEntries = st_state.entries.filter(e=>e.articleId===art.id).slice()
-      .sort((a,b)=> a.date<b.date?-1:a.date>b.date?1:0);
-    const totalIn = artEntries.reduce((s,e)=>s+Number(e.quantite),0);
-    const totalOut = st_state.exits.filter(x=>x.articleId===art.id).reduce((s,e)=>s+Number(e.quantite),0);
-    const stockActuel = totalIn - totalOut;
-    let cumIn = 0;
-    const lots = artEntries.map(e=>{
-      cumIn += Number(e.quantite);
-      const remaining = Math.min(Number(e.quantite), Math.max(0, cumIn-totalOut));
-      return {id:e.id, date:e.date, qtyLot:Number(e.quantite), remaining,
-        prixUnitaire:Number(e.prixUnitaire)||0, datePeremption:e.datePeremption,
-        fournisseur:e.fournisseur, numeroLot:e.numeroLot};
-    });
-    const valorisation = lots.reduce((s,l)=>s+l.remaining*l.prixUnitaire,0);
-    const activeLots = lots.filter(l=>l.remaining>0);
-    let status = 'ok';
-    if(stockActuel<=0) status='rupture';
-    else if(art.stockMin && stockActuel<Number(art.stockMin)) status='sousMin';
-    else if(art.stockMax && stockActuel>Number(art.stockMax)) status='surStock';
-    byArticle[art.id] = {stockActuel, lots, activeLots, valorisation, status};
-  });
-  return byArticle;
-}
-function st_computeAlerts(computed){
-  const stockAlerts = st_state.articles.filter(a=>computed[a.id] && (computed[a.id].status==='rupture'||computed[a.id].status==='sousMin'))
-    .map(a=>({article:a, ...computed[a.id]}));
-  const expiryAlerts = [];
-  st_state.articles.forEach(a=>{
-    const c = computed[a.id]; if(!c) return;
-    c.activeLots.forEach(l=>{
-      const d = st_daysUntil(l.datePeremption);
-      if(d!==null && d<=7) expiryAlerts.push({article:a, lot:l, days:d});
-    });
-  });
-  expiryAlerts.sort((x,y)=>x.days-y.days);
-  return {stockAlerts, expiryAlerts};
-}
-
-/* ---------------- App st_state (UI) ---------------- */
-let st_currentTab = 'dashboard';
-let st_catFilter = 'Tous';
-let st_searchTerm = '';
-let st_mouvMode = 'entree';
-let st_showArticleForm = false;
-let st_showMouvForm = false;
-let st_workingDate = todayISO();
-let st_draft = [];
-let st_calcMode = 'prix';
-let st_editingArticleId = null;
-let st_articleFormData = { nom:'', categorie:'Cuisine', unite:'kg', stockMin:'', stockMax:'', fournisseur:'', achatGerant:true };
-let st_exitMotif = 'Cuisine';
-let st_exitArticleTyped = '';
-let st_exitQty = '';
-let st_exitPrecision = '';
-
-function st_setTab(t){ st_currentTab = t; st_render(); }
-function st_setCatFilter(c){ st_catFilter = c; st_render(); }
-
-/* ---------------- Render root ---------------- */
-function st_render(){
-  const active = document.activeElement;
-  const activeId = (active && active.id) ? active.id : null;
-  let selStart=null, selEnd=null;
-  if(active && typeof active.selectionStart === 'number'){
-    selStart = active.selectionStart; selEnd = active.selectionEnd;
-  }
-
-  document.getElementById('today-label').textContent =
-    new Date().toLocaleDateString('fr-FR',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
-
-  const computed = st_computeAll();
-  const alerts = st_computeAlerts(computed);
-  const totalAlerts = alerts.stockAlerts.length + alerts.expiryAlerts.length;
-  const badge = document.getElementById('alert-badge');
-  document.getElementById('alert-count').textContent = totalAlerts;
-  badge.style.display = totalAlerts>0 ? 'flex' : 'none';
-
-  st_renderTabs(totalAlerts);
-  const main = document.getElementById('stock-main');
-  if(st_currentTab==='dashboard') main.innerHTML = st_renderDashboard(computed, alerts);
-  else if(st_currentTab==='articles') main.innerHTML = st_renderArticles(computed);
-  else if(st_currentTab==='mouvements') main.innerHTML = st_renderMouvements();
-  else if(st_currentTab==='alerts') main.innerHTML = st_renderAlerts(alerts);
-  st_attachHandlers();
-
-  if(activeId){
-    const el = document.getElementById(activeId);
-    if(el){
-      el.focus();
-      if(selStart!=null && el.setSelectionRange){
-        try{ el.setSelectionRange(selStart, selEnd); }catch(e){}
-      }
-    }
-  }
-}
-
-function st_renderTabs(totalAlerts){
-  const tabs = [
-    {id:'dashboard', label:'Tableau de bord'},
-    {id:'articles', label:'Articles'},
-    {id:'mouvements', label:'Mouvements'},
-    {id:'alerts', label:'Alertes', count:totalAlerts},
-  ];
-  document.getElementById('stock-tabs').innerHTML = tabs.map(t=>`
-    <button class="${st_currentTab===t.id?'active':''}" onclick="st_setTab('${t.id}')">
-      ${esc(t.label)} ${t.count>0?`<span class="count-pill">${t.count}</span>`:''}
-    </button>`).join('');
-}
-
-/* ---------------- Dashboard ---------------- */
-function st_renderDashboard(computed, alerts){
-  if(st_state.articles.length===0){
-    return `<div class="ticket empty-st_state">
-      <div class="display" style="font-size:17px;font-weight:600;">Aucun article pour l'instant</div>
-      <p style="color:var(--ink-muted);font-size:13.5px;max-width:340px;margin:8px auto 16px;">
-        Ajoutez votre premier article (cuisine, bar, consommable ou emballage) pour commencer à suivre votre stock.
-      </p>
-      <button class="btn" onclick="st_setTab('articles')">+ Ajouter un article</button>
-    </div>`;
-  }
-  const totalVal = st_state.articles.reduce((s,a)=>s+(computed[a.id]?.valorisation||0),0);
-
-  const statCards = `
-    <div class="grid grid-4">
-      <div class="ticket"><div class="stat-value display">${st_state.articles.length}</div><div class="stat-label">Articles suivis</div></div>
-      <div class="ticket" onclick="st_setTab('alerts')" style="cursor:pointer"><div class="stat-value display" style="color:var(--rust)">${alerts.stockAlerts.length}</div><div class="stat-label">Sous le seuil</div></div>
-      <div class="ticket" onclick="st_setTab('alerts')" style="cursor:pointer"><div class="stat-value display" style="color:var(--amber)">${alerts.expiryAlerts.length}</div><div class="stat-label">Péremption ≤ 7j</div></div>
-      <div class="ticket"><div class="stat-value money display" style="color:var(--moss)">${st_fmtMoney(totalVal)}</div><div class="stat-label">Valeur du stock</div></div>
-    </div>`;
-
-  const catCards = `
-    <h2 class="section">Par catégorie</h2>
-    <div class="grid grid-4">
-      ${st_CATEGORIES.map(cat=>{
-        const catArticles = st_state.articles.filter(a=>a.categorie===cat.id);
-        const nbAlert = catArticles.filter(a=>computed[a.id] && (computed[a.id].status==='rupture'||computed[a.id].status==='sousMin')).length;
-        return `<button class="cat-card" style="background:${cat.bg}" onclick="st_setCatFilter('${cat.id}');st_setTab('articles')">
-          <div style="font-weight:600;font-size:13.5px;">${esc(cat.label)}</div>
-          <div style="font-size:11.5px;color:var(--ink-muted);">${catArticles.length} article(s)</div>
-          ${nbAlert>0?`<div style="font-size:11px;font-weight:600;color:var(--rust);margin-top:2px;">${nbAlert} en alerte</div>`:''}
-        </button>`;
-      }).join('')}
-    </div>`;
-
-  let alertPreview = '';
-  if(alerts.stockAlerts.length>0 || alerts.expiryAlerts.length>0){
-    alertPreview = `
-      <div class="row-between" style="margin-top:22px;">
-        <h2 class="section" style="margin:0;">Alertes prioritaires</h2>
-        <button onclick="st_setTab('alerts')" style="background:none;border:none;color:var(--forest);font-size:12px;font-weight:500;cursor:pointer;">Voir tout →</button>
-      </div>
-      ${alerts.stockAlerts.slice(0,3).map(a=>`
-        <div class="ticket" style="padding:10px 14px;">
-          <div class="row-between">
-            <span style="font-size:13px;font-weight:500;">▼ ${esc(a.article.nom)}</span>
-            <span class="mono" style="font-size:12px;color:var(--rust);">${st_fmtNum(a.stockActuel)} ${esc(a.article.unite)} restant(s)</span>
-          </div>
-        </div>`).join('')}
-      ${alerts.expiryAlerts.slice(0,3).map(a=>`
-        <div class="ticket" style="padding:10px 14px;">
-          <div class="row-between">
-            <span style="font-size:13px;font-weight:500;">⏱ ${esc(a.article.nom)}</span>
-            <span class="mono" style="font-size:12px;color:${a.days<0?'var(--rust)':'var(--amber)'};">${a.days<0?'Périmé':a.days+' j restant(s)'}</span>
-          </div>
-        </div>`).join('')}`;
-  }
-  return statCards + catCards + alertPreview;
-}
-
-/* ---------------- Articles ---------------- */
-function st_lotStripHTML(lots){
-  if(!lots.length) return `<div style="font-size:11.5px;color:var(--ink-muted);">Aucun lot en stock</div>`;
-  const maxQty = Math.max(...lots.map(l=>l.qtyLot),1);
-  return `<div class="lot-strip">${lots.map(l=>{
-    const d = st_daysUntil(l.datePeremption);
-    let color='var(--moss)', bg='var(--moss-bg)', label='Frais';
-    if(d!==null){
-      if(d<0){color='var(--rust)';bg='var(--rust-bg)';label='Périmé';}
-      else if(d<=3){color='var(--rust)';bg='var(--rust-bg)';label=d+' j';}
-      else if(d<=7){color='var(--amber)';bg='var(--amber-bg)';label=d+' j';}
-      else{label=fmtDateShort(l.datePeremption);}
-    } else { label='—'; }
-    const widthPct = Math.max(28, Math.round((l.qtyLot/maxQty)*100));
-    return `<div class="lot-chip" style="background:${bg};border-color:${color};width:${Math.min(widthPct,140)}px;" title="Lot du ${fmtDateShort(l.date)}">
-      <span class="q" style="color:${color}">${st_fmtNum(l.remaining)}</span>
-      <span class="d">${esc(label)}</span>
-    </div>`;
-  }).join('')}</div>`;
-}
-
-function st_renderArticles(computed){
-  const filtered = st_state.articles.filter(a=>{
-    const matchCat = st_catFilter==='Tous' || a.categorie===st_catFilter;
-    const matchSearch = a.nom.toLowerCase().includes(st_searchTerm.toLowerCase());
-    return matchCat && matchSearch;
-  });
-
-  const filterChips = `<div class="filter-row">
-    <button class="filter-chip ${st_catFilter==='Tous'?'active':''}" onclick="st_setCatFilter('Tous')">Tous</button>
-    ${st_CATEGORIES.map(c=>`<button class="filter-chip ${st_catFilter===c.id?'active':''}" onclick="st_setCatFilter('${c.id}')">${esc(c.label)}</button>`).join('')}
-  </div>`;
-
-  const topRow = `<div class="top-row">
-      ${filterChips}
-    </div>
-    <div class="top-row">
-      <div class="search-wrap"><span class="icon">🔎</span><input type="text" id="search-input" placeholder="Rechercher…" value="${esc(st_searchTerm)}" oninput="st_searchTerm=this.value;st_render()" /></div>
-      <button class="btn" onclick="st_openArticleForm()">+ Article</button>
-    </div>`;
-
-  const editingArticle = st_editingArticleId ? st_state.articles.find(a=>a.id===st_editingArticleId) : null;
-
-  const form = st_showArticleForm ? `
-    <div class="ticket" style="padding:18px;">
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--forest);">${editingArticle ? "Modifier l'article" : 'Nouvel article'}</div>
-      <form id="article-form" onsubmit="return st_submitArticle(event)">
-        <div class="form-section">
-          <div class="field"><label>Nom</label><input type="text" id="af-nom" placeholder="Ex. Saumon frais" value="${esc(st_articleFormData.nom)}" required /></div>
-        </div>
-        <div class="form-section">
-          <div class="section-label"><span class="num">1</span>Catégorie</div>
-          <div class="grid grid-2" style="gap:8px;">
-            ${st_CATEGORIES.map(c=>`
-              <button type="button" onclick="st_setArticleCategorie('${c.id}')" style="padding:14px;border-radius:8px;border:2px solid ${st_articleFormData.categorie===c.id?c.color:'var(--line)'};background:${st_articleFormData.categorie===c.id?c.bg:'var(--surface)'};text-align:left;cursor:pointer;">
-                <div style="font-weight:700;font-size:14px;color:${st_articleFormData.categorie===c.id?c.color:'var(--ink)'};">${esc(c.label)}</div>
-              </button>
-            `).join('')}
-          </div>
-        </div>
-        <div class="form-section">
-          <div class="section-label"><span class="num">2</span>Détails</div>
-          <div class="grid grid-2">
-            <div class="field"><label>Unité</label><select id="af-unite">${st_UNITS.map(u=>`<option value="${u}" ${st_articleFormData.unite===u?'selected':''}>${u}</option>`).join('')}</select></div>
-            <div class="field"><label>Fournisseur (optionnel)</label><input type="text" id="af-fourn" value="${esc(st_articleFormData.fournisseur)}" /></div>
-            <div class="field"><label>Stock min (seuil)</label><input type="number" id="af-min" value="${esc(st_articleFormData.stockMin)}" /></div>
-            <div class="field"><label>Stock max (optionnel)</label><input type="number" id="af-max" value="${esc(st_articleFormData.stockMax)}" /></div>
-          </div>
-        </div>
-        <div class="form-section">
-          <div class="section-label"><span class="num">3</span>Options</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <input type="checkbox" id="af-gerant" style="width:auto;" ${st_articleFormData.achatGerant?'checked':''} />
-            <label style="text-transform:none;font-size:12.5px;font-weight:500;color:var(--ink);">Achat comptabilisé dans les Dépenses (décochez si c'est vous qui achetez cet article, pas le gérant)</label>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button type="submit" class="btn">${editingArticle ? 'Enregistrer les modifications' : 'Enregistrer'}</button>
-          <button type="button" class="btn ghost" onclick="st_closeArticleForm()">Annuler</button>
-        </div>
-      </form>
-    </div>` : '';
-
-  const statusMap = {
-    rupture:{label:'Rupture', color:'var(--rust)', bg:'var(--rust-bg)'},
-    sousMin:{label:'Sous le seuil', color:'var(--rust)', bg:'var(--rust-bg)'},
-    surStock:{label:'Sur-stock', color:'var(--amber)', bg:'var(--amber-bg)'},
-    ok:{label:'OK', color:'var(--moss)', bg:'var(--moss-bg)'},
-  };
-
-  const list = filtered.length===0 ? `<p style="font-size:13px;color:var(--ink-muted);">Aucun article ne correspond.</p>` :
-    filtered.map(a=>{
-      const c = computed[a.id] || {stockActuel:0, activeLots:[], valorisation:0, status:'ok'};
-      const meta = st_catMeta(a.categorie);
-      const st = statusMap[c.status];
-      return `<div class="ticket">
-        <div class="article-head">
-          <div>
-            <div><span class="article-name">${esc(a.nom)}</span>
-              <span class="chip" style="color:${meta.color};background:${meta.bg};margin-left:6px;">${esc(meta.label)}</span>
-              <span class="chip" style="color:${st.color};background:${st.bg};margin-left:4px;">${esc(st.label)}</span>
-              ${a.achatGerant===false?`<span class="chip" style="color:#8A4A2E;background:#F3E5DC;margin-left:4px;">Achat direct (non comptabilisé)</span>`:''}
-            </div>
-            <div class="article-meta">${a.fournisseur?`Fournisseur : ${esc(a.fournisseur)} · `:''}Seuil min : ${st_fmtNum(a.stockMin)} ${esc(a.unite)}${a.stockMax?` · Seuil max : ${st_fmtNum(a.stockMax)} ${esc(a.unite)}`:''}${a.modifiePar?` · modifié par ${esc(a.modifiePar)}`:(a.creePar?` · ajouté par ${esc(a.creePar)}`:'')}</div>
-          </div>
-          <div class="article-stock">
-            <div class="val" style="color:${st.color}">${st_fmtNum(c.stockActuel)} ${esc(a.unite)}</div>
-            <div class="money">${st_fmtMoney(c.valorisation)}</div>
-          </div>
-        </div>
-        ${st_lotStripHTML(c.activeLots)}
-        <div style="text-align:right;margin-top:10px;display:flex;justify-content:flex-end;gap:14px;">
-          <button class="x-btn" style="font-size:11.5px;color:var(--forest);" onclick="st_openArticleForm('${a.id}')">✏️ Modifier</button>
-          <button class="x-btn" style="font-size:11.5px;" onclick="st_removeArticle('${a.id}')">🗑 Supprimer l'article</button>
-        </div>
-      </div>`;
-    }).join('');
-
-  return topRow + form + list;
-}
-
-function st_openArticleForm(id){
-  st_editingArticleId = id || null;
-  st_showArticleForm = true;
-  const editing = st_editingArticleId ? st_state.articles.find(a=>a.id===st_editingArticleId) : null;
-  st_articleFormData = editing
-    ? { nom: editing.nom||'', categorie: editing.categorie||'Cuisine', unite: editing.unite||'kg', stockMin: editing.stockMin!=null?editing.stockMin:'', stockMax: editing.stockMax!=null?editing.stockMax:'', fournisseur: editing.fournisseur||'', achatGerant: editing.achatGerant!==false }
-    : { nom:'', categorie:'Cuisine', unite:'kg', stockMin:'', stockMax:'', fournisseur:'', achatGerant:true };
-  st_render();
-  const el = document.getElementById('article-form');
-  if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
-}
-function st_closeArticleForm(){
-  st_showArticleForm = false;
-  st_editingArticleId = null;
-  st_render();
-}
-function st_syncArticleFormFromDOM(){
-  const nomEl = document.getElementById('af-nom');
-  const uniteEl = document.getElementById('af-unite');
-  const minEl = document.getElementById('af-min');
-  const maxEl = document.getElementById('af-max');
-  const fournEl = document.getElementById('af-fourn');
-  const gerantEl = document.getElementById('af-gerant');
-  if(nomEl) st_articleFormData.nom = nomEl.value;
-  if(uniteEl) st_articleFormData.unite = uniteEl.value;
-  if(minEl) st_articleFormData.stockMin = minEl.value;
-  if(maxEl) st_articleFormData.stockMax = maxEl.value;
-  if(fournEl) st_articleFormData.fournisseur = fournEl.value;
-  if(gerantEl) st_articleFormData.achatGerant = gerantEl.checked;
-}
-function st_setArticleCategorie(catId){
-  st_syncArticleFormFromDOM();
-  st_articleFormData.categorie = catId;
-  st_render();
-}
-
-function st_submitArticle(ev){
-  ev.preventDefault();
-  if(!currentUser){ askUserName(false); if(!currentUser) return false; }
-  st_syncArticleFormFromDOM();
-  const nom = st_articleFormData.nom.trim();
-  if(!nom) return false;
-  const data = {
-    nom,
-    categorie: st_articleFormData.categorie,
-    unite: st_articleFormData.unite,
-    stockMin: st_articleFormData.stockMin || 0,
-    stockMax: st_articleFormData.stockMax || '',
-    fournisseur: st_articleFormData.fournisseur,
-    achatGerant: st_articleFormData.achatGerant,
-  };
-  if(st_editingArticleId){
-    const idx = st_state.articles.findIndex(a=>a.id===st_editingArticleId);
-    if(idx>-1) st_state.articles[idx] = {...st_state.articles[idx], ...data, modifiePar: currentUser, modifieLe: new Date().toISOString()};
-  } else {
-    st_state.articles.push({ id: uid(), ...data, creePar: currentUser, creeLe: new Date().toISOString() });
-  }
-  st_showArticleForm = false;
-  st_editingArticleId = null;
-  st_saveState(); st_render();
-  return false;
-}
-function st_removeArticle(id){
-  st_state.articles = st_state.articles.filter(a=>a.id!==id);
-  st_state.entries = st_state.entries.filter(e=>e.articleId!==id);
-  st_state.exits = st_state.exits.filter(e=>e.articleId!==id);
-  st_saveState(); st_render();
-}
-
-/* ---------------- Mouvements ---------------- */
-function st_renderMouvements(){
-  if(st_state.articles.length===0){
-    return `<p style="font-size:13px;color:var(--ink-muted);">Ajoutez d'abord un article dans l'onglet « Articles » avant d'enregistrer un mouvement.</p>`;
-  }
-  const articleDatalist = st_state.articles.map(a=>`<option value="${esc(a.nom)}">`).join('');
-
-  const dateBar = `<div class="ticket" style="padding:12px 14px;">
-    <div class="field"><label>Date de saisie</label><input type="date" id="st-working-date" value="${st_workingDate}" onchange="st_workingDate=this.value;st_render()" /></div>
-  </div>`;
-
-  const modeToggle = `<div class="mode-toggle">
-    <button class="filter-chip ${st_mouvMode==='entree'?'active':''}" style="${st_mouvMode==='entree'?'background:var(--moss);border-color:var(--moss);':''}" onclick="st_mouvMode='entree';st_render()">Entrée (réception)</button>
-    <button class="filter-chip ${st_mouvMode==='sortie'?'active':''}" style="${st_mouvMode==='sortie'?'background:var(--rust);border-color:var(--rust);':''}" onclick="st_mouvMode='sortie';st_render()">Sortie (utilisation)</button>
-  </div>`;
-
-  const entryForm = `<div class="ticket" style="padding:18px;">
-    <div class="form-section">
-      <div class="section-label"><span class="num">1</span>Article et quantité</div>
-      <div class="grid grid-2">
-        <div class="field" style="grid-column:1/-1;"><label>Article</label><input type="text" id="ef-article" list="ef-article-list" placeholder="Tapez pour rechercher…" /><datalist id="ef-article-list">${articleDatalist}</datalist></div>
-        <div class="field"><label>Quantité</label><input type="text" inputmode="decimal" id="ef-qty" placeholder="0" oninput="st_updateCalcPreview()" /></div>
-        <div class="field"><label>Mode de saisie</label>
-          <div class="filter-row" style="margin:0;">
-            <button type="button" class="filter-chip ${st_calcMode==='prix'?'active':''}" style="${st_calcMode==='prix'?'background:var(--moss);border-color:var(--moss);color:#fff;':''}" onclick="st_calcMode='prix';st_render()">Prix unitaire</button>
-            <button type="button" class="filter-chip ${st_calcMode==='montant'?'active':''}" style="${st_calcMode==='montant'?'background:var(--moss);border-color:var(--moss);color:#fff;':''}" onclick="st_calcMode='montant';st_render()">Montant total</button>
-          </div>
-        </div>
-        ${st_calcMode==='prix' ? `
-          <div class="field" style="grid-column:1/-1;"><label>Prix unitaire (DA)</label><input type="text" inputmode="decimal" id="ef-prix" placeholder="0" oninput="st_updateCalcPreview()" /></div>
-        ` : `
-          <div class="field" style="grid-column:1/-1;"><label>Montant total (DA)</label><input type="text" inputmode="decimal" id="ef-montant" placeholder="0" oninput="st_updateCalcPreview()" /></div>
-        `}
-        <div style="grid-column:1/-1;font-size:12.5px;color:var(--ink-muted);" id="ef-calc-preview"></div>
-      </div>
-    </div>
-    <div class="form-section">
-      <div class="section-label"><span class="num">2</span>Compléments (optionnel)</div>
-      <div id="entry-form" class="grid grid-2">
-        <div class="field"><label>Fournisseur</label><input type="text" id="ef-fourn" /></div>
-        <div class="field"><label>Date de péremption</label><input type="date" id="ef-dlc" /></div>
-        <div class="field" style="grid-column:1/-1;"><label>N° de lot</label><input type="text" id="ef-lot" /></div>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;">
-      <button type="button" class="btn moss" onclick="st_submitEntry()">Ajouter et continuer</button>
-      <button type="button" class="btn ghost" onclick="st_showMouvForm=false;st_render()">Terminer la saisie</button>
-    </div>
-  </div>`;
-
-  const exitForm = `<div class="ticket" style="padding:18px;">
-    <div class="form-section">
-      <div class="section-label"><span class="num">1</span>Article</div>
-      <div class="field"><input type="text" id="xf-article" list="xf-article-list" placeholder="Tapez pour rechercher…" value="${esc(st_exitArticleTyped)}" oninput="st_exitArticleTyped=this.value" /><datalist id="xf-article-list">${articleDatalist}</datalist></div>
-    </div>
-    <div class="form-section">
-      <div class="section-label"><span class="num">2</span>Motif</div>
-      <div class="grid grid-2" style="gap:8px;">
-        ${st_MOTIFS.map(m=>`
-          <button type="button" onclick="st_setExitMotif('${m}')" style="padding:12px;border-radius:8px;border:2px solid ${st_exitMotif===m?'var(--rust)':'var(--line)'};background:${st_exitMotif===m?'var(--rust-bg)':'var(--surface)'};text-align:left;cursor:pointer;">
-            <div style="font-weight:600;font-size:13px;color:${st_exitMotif===m?'var(--rust)':'var(--ink)'};">${esc(m)}</div>
-          </button>
-        `).join('')}
-      </div>
-      <div class="field" style="margin-top:10px;">
-        <label>Précision (optionnel)</label>
-        <input type="text" id="xf-precision" placeholder="Ex. plat renversé, invendu du soir…" value="${esc(st_exitPrecision)}" oninput="st_exitPrecision=this.value" />
-      </div>
-    </div>
-    <div class="form-section">
-      <div class="section-label"><span class="num">3</span>Quantité</div>
-      <div class="field"><input type="text" inputmode="decimal" id="xf-qty" placeholder="0" value="${esc(st_exitQty)}" oninput="st_exitQty=this.value" /></div>
-    </div>
-    <div style="display:flex;gap:8px;">
-      <button type="button" class="btn rust" onclick="st_submitExit()">Ajouter et continuer</button>
-      <button type="button" class="btn ghost" onclick="st_showMouvForm=false;st_render()">Terminer la saisie</button>
-    </div>
-  </div>`;
-
-  const nameOf = id => st_state.articles.find(a=>a.id===id)?.nom || 'Article supprimé';
-  const unitOf = id => st_state.articles.find(a=>a.id===id)?.unite || '';
-
-  const draftBox = st_draft.length>0 ? `
-    <div class="ticket" style="padding:14px 16px;border-color:var(--amber);">
-      <div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:8px;">📝 Brouillon du ${fmtDateShort(st_workingDate)} — ${st_draft.length} mouvement(s) non enregistré(s)</div>
-      ${st_draft.map(d=>`
-        <div class="movement-row">
-          <div><div style="font-weight:500;">${d.kind==='entree'?'↓':'↑'} ${esc(nameOf(d.articleId))}</div>
-          <div class="sub">${fmtDateShort(d.date)} · ${d.kind==='entree'?'+':'-'}${st_fmtNum(d.quantite)} ${esc(unitOf(d.articleId))}${d.kind==='entree'?` · ${st_fmtNum(d.prixUnitaire)} DA/u`:` · ${esc(d.motif)}`}</div></div>
-          <button class="x-btn" onclick="st_removeFromDraft('${d.draftId}')">✕</button>
-        </div>
-      `).join('')}
-      <button class="btn moss" style="margin-top:6px;" onclick="st_saveDraftDay()">✓ Enregistrer la journée (${st_draft.length} mouvement(s))</button>
-    </div>
-  ` : '';
-
-  if(!st_showMouvForm){
-    return dateBar + modeToggle +
-      `<button class="btn" onclick="st_showMouvForm=true;st_render()">+ Mouvement</button>` +
-      draftBox + st_renderMouvHistory(nameOf, unitOf);
-  }
-
-  return dateBar + modeToggle + (st_mouvMode==='entree'?entryForm:exitForm) + draftBox + st_renderMouvHistory(nameOf, unitOf);
-}
-
-function st_renderMouvHistory(nameOf, unitOf){
-  const recentEntries = st_state.entries.slice().sort((a,b)=>a.date<b.date?1:-1).slice(0,15);
-  const recentExits = st_state.exits.slice().sort((a,b)=>a.date<b.date?1:-1).slice(0,15);
-
-  const historyEntries = `<h2 class="section">Dernières entrées</h2>
-    ${recentEntries.length===0?`<p style="font-size:12px;color:var(--ink-muted);">Aucune entrée enregistrée.</p>`:
-      recentEntries.map(e=>`<div class="movement-row">
-        <div><div style="font-weight:500;">${esc(nameOf(e.articleId))}</div>
-        <div class="sub">${fmtDateShort(e.date)} · +${st_fmtNum(e.quantite)} ${esc(unitOf(e.articleId))}${e.par?` · par ${esc(e.par)}`:''}</div></div>
-        <button class="x-btn" onclick="st_removeEntry('${e.id}')">✕</button>
-      </div>`).join('')}`;
-
-  const historyExits = `<h2 class="section">Dernières sorties</h2>
-    ${recentExits.length===0?`<p style="font-size:12px;color:var(--ink-muted);">Aucune sortie enregistrée.</p>`:
-      recentExits.map(e=>`<div class="movement-row">
-        <div><div style="font-weight:500;">${esc(nameOf(e.articleId))}</div>
-        <div class="sub">${fmtDateShort(e.date)} · -${st_fmtNum(e.quantite)} ${esc(unitOf(e.articleId))} · ${esc(e.motif)}${e.par?` · par ${esc(e.par)}`:''}</div></div>
-        <button class="x-btn" onclick="st_removeExit('${e.id}')">✕</button>
-      </div>`).join('')}`;
-
-  return `<div class="grid" style="grid-template-columns:1fr;margin-top:6px;">${historyEntries}${historyExits}</div>`;
-}
-
-function st_updateCalcPreview(){
-  const qtyEl = document.getElementById('ef-qty');
-  const previewEl = document.getElementById('ef-calc-preview');
-  if(!qtyEl || !previewEl) return;
-  const qty = st_parseNum(qtyEl.value);
-  if(st_calcMode==='prix'){
-    const prixEl = document.getElementById('ef-prix');
-    const prix = prixEl ? st_parseNum(prixEl.value) : 0;
-    previewEl.textContent = (qty && prix) ? `= ${st_fmtMoney(qty*prix)} au total` : '';
-  } else {
-    const montantEl = document.getElementById('ef-montant');
-    const montant = montantEl ? st_parseNum(montantEl.value) : 0;
-    previewEl.textContent = (qty && montant) ? `= ${st_fmtMoney(montant/qty)} / unité` : '';
-  }
-}
-function st_parseNum(v){ if(v===null||v===undefined||v==='') return 0; const n = Number(String(v).replace(',','.')); return isNaN(n)?0:n; }
-function st_resolveArticleByName(typed){
-  const clean = (typed||'').trim().toLowerCase();
-  if(!clean) return null;
-  return st_state.articles.find(a=>a.nom.trim().toLowerCase()===clean) || null;
-}
-
-function st_submitEntry(){
-  const typed = document.getElementById('ef-article').value;
-  const article = st_resolveArticleByName(typed);
-  if(!article){ alert('Article introuvable. Sélectionnez un article existant dans la liste (tapez pour filtrer).'); return; }
-  const qty = st_parseNum(document.getElementById('ef-qty').value);
-  if(!qty){ alert('Merci de renseigner une quantité.'); return; }
-  let prix, montant;
-  if(st_calcMode==='prix'){
-    prix = st_parseNum(document.getElementById('ef-prix').value);
-  } else {
-    montant = st_parseNum(document.getElementById('ef-montant').value);
-    prix = qty ? montant/qty : 0;
-  }
-  st_draft.push({
-    draftId: uid(), kind:'entree', articleId: article.id,
-    date: st_workingDate, quantite: qty, prixUnitaire: prix||0,
-    datePeremption: document.getElementById('ef-dlc').value,
-    fournisseur: document.getElementById('ef-fourn').value,
-    numeroLot: document.getElementById('ef-lot').value,
-  });
-  st_render();
-}
-function st_setExitMotif(m){
-  const articleEl = document.getElementById('xf-article');
-  const qtyEl = document.getElementById('xf-qty');
-  const precisionEl = document.getElementById('xf-precision');
-  if(articleEl) st_exitArticleTyped = articleEl.value;
-  if(qtyEl) st_exitQty = qtyEl.value;
-  if(precisionEl) st_exitPrecision = precisionEl.value;
-  st_exitMotif = m;
-  st_render();
-}
-function st_submitExit(){
-  const typed = document.getElementById('xf-article').value;
-  const article = st_resolveArticleByName(typed);
-  if(!article){ alert('Article introuvable. Sélectionnez un article existant dans la liste (tapez pour filtrer).'); return; }
-  const qty = st_parseNum(document.getElementById('xf-qty').value);
-  if(!qty){ alert('Merci de renseigner une quantité.'); return; }
-  const precision = document.getElementById('xf-precision').value.trim();
-  const motifFinal = precision ? `${st_exitMotif} — ${precision}` : st_exitMotif;
-  st_draft.push({
-    draftId: uid(), kind:'sortie', articleId: article.id,
-    date: st_workingDate, quantite: qty,
-    motif: motifFinal,
-  });
-  st_exitArticleTyped = '';
-  st_exitQty = '';
-  st_exitPrecision = '';
-  st_render();
-}
-function st_removeFromDraft(draftId){
-  st_draft = st_draft.filter(d=>d.draftId!==draftId);
-  st_render();
-}
-async function st_saveDraftDay(){
-  if(st_draft.length===0) return;
-  if(!currentUser){ askUserName(false); if(!currentUser) return; }
-  st_draft.forEach(d=>{
-    if(d.kind==='entree'){
-      st_state.entries.push({
-        id: uid(), articleId: d.articleId, date: d.date, quantite: d.quantite,
-        prixUnitaire: d.prixUnitaire, datePeremption: d.datePeremption,
-        fournisseur: d.fournisseur, numeroLot: d.numeroLot, par: currentUser,
-      });
-    } else {
-      st_state.exits.push({
-        id: uid(), articleId: d.articleId, date: d.date, quantite: d.quantite,
-        motif: d.motif, par: currentUser,
-      });
-    }
-  });
-  const count = st_draft.length;
-  st_draft = [];
-  st_showMouvForm = false;
-  await st_saveState();
-  alert('Journée du '+fmtDateShort(st_workingDate)+' enregistrée ('+count+' mouvement(s)).');
-  st_render();
-}
-function st_removeEntry(id){ st_state.entries = st_state.entries.filter(e=>e.id!==id); st_saveState(); st_render(); }
-function st_removeExit(id){ st_state.exits = st_state.exits.filter(e=>e.id!==id); st_saveState(); st_render(); }
-
-/* ---------------- Alerts ---------------- */
-function st_stockAlertAction(a){
-  const art = a.article;
-  if(art.stockMax && Number(art.stockMax) > a.stockActuel){
-    const suggested = Number(art.stockMax) - a.stockActuel;
-    return `Commander environ ${st_fmtNum(suggested)} ${esc(art.unite)} pour revenir au seuil max.`;
-  }
-  return `Réapprovisionner cet article dès que possible.`;
-}
-function st_expiryAlertAction(a){
-  if(a.days < 0) return `Lot périmé — à retirer du stock (enregistrer une sortie, motif « Casse / gaspillage »).`;
-  if(a.days <= 3) return `À utiliser en priorité dans les ${a.days} prochain(s) jour(s).`;
-  return `À prévoir dans votre planning des prochains jours.`;
-}
-function st_renderAlerts(alerts){
-  if(alerts.stockAlerts.length===0 && alerts.expiryAlerts.length===0){
-    return `<div class="ticket empty-st_state">
-      <div style="font-size:28px;">✅</div>
-      <div class="display" style="font-size:16px;font-weight:600;margin-top:6px;">Aucune alerte</div>
-      <p style="color:var(--ink-muted);font-size:13px;margin-top:4px;">Tous les stocks sont au-dessus du seuil et rien n'expire dans les 7 prochains jours.</p>
-    </div>`;
-  }
-  let html = '';
-  if(alerts.stockAlerts.length>0){
-    html += `<h2 class="section" style="color:var(--rust);">▼ Sous le seuil de réapprovisionnement</h2>`;
-    html += alerts.stockAlerts.map(a=>`<div class="ticket" style="padding:12px 14px;">
-      <div class="row-between">
-        <div><div style="font-size:13.5px;font-weight:500;">${esc(a.article.nom)}</div><div style="font-size:11.5px;color:var(--ink-muted);">${esc(st_catMeta(a.article.categorie).label)}</div></div>
-        <div class="mono" style="font-size:13px;color:var(--rust);text-align:right;">${st_fmtNum(a.stockActuel)} / min ${st_fmtNum(a.article.stockMin)} ${esc(a.article.unite)}</div>
-      </div>
-      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:var(--ink);">
-        <span style="font-weight:700;color:var(--rust);">À faire : </span>${st_stockAlertAction(a)}
-      </div></div>`).join('');
-  }
-  if(alerts.expiryAlerts.length>0){
-    html += `<h2 class="section" style="color:var(--amber);">⏱ Péremption proche (≤ 7 jours)</h2>`;
-    html += alerts.expiryAlerts.map(a=>`<div class="ticket" style="padding:12px 14px;">
-      <div class="row-between">
-        <div><div style="font-size:13.5px;font-weight:500;">${esc(a.article.nom)}</div>
-          <div style="font-size:11.5px;color:var(--ink-muted);">Lot du ${fmtDateShort(a.lot.date)} · ${st_fmtNum(a.lot.remaining)} ${esc(a.article.unite)} restant(s)</div></div>
-        <span class="chip" style="color:${a.days<0?'var(--rust)':'var(--amber)'};background:${a.days<0?'var(--rust-bg)':'var(--amber-bg)'};">${a.days<0?'Périmé':a.days+' j'}</span>
-      </div>
-      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:var(--ink);">
-        <span style="font-weight:700;color:${a.days<0?'var(--rust)':'var(--amber)'};">À faire : </span>${st_expiryAlertAction(a)}
-      </div></div>`).join('');
-  }
-  return html;
-}
-
-function st_attachHandlers(){ /* forms use inline handlers; nothing extra needed */ }
-
-st_render();
-st_initFirebaseSync();
 
 /* ==================== MODULE CAISSE ==================== */
 const ca_caisseCol = db.collection('caisse_sessions');
@@ -1699,6 +1157,7 @@ ca_render();
 /* ==================== MODULE DÉPENSES (Gérant) ==================== */
 const dp_mouvCol = db.collection('depenses_mouvements');
 const dp_pointagesCol = db.collection('depenses_pointages');
+const dp_verificationsCol = db.collection('depenses_verifications');
 const dp_cloturesCol = db.collection('depenses_clotures');
 
 const EMPLOYES_PAR_SERVICE = {
@@ -1716,7 +1175,7 @@ const DP_TYPES = [
   { id:'AppointMoi', label:'Appoint moi → gérant', shortLabel:'Appoint moi', color:'var(--bar)', bg:'var(--bar-bg)', sign:+1 },
   { id:'Recette', label:'Recette encaissée', shortLabel:'Recette', color:'var(--forest)', bg:'var(--moss-bg)', sign:+1 },
   { id:'Charge', label:'Charge / Divers', shortLabel:'Charge', color:'var(--rust)', bg:'var(--rust-bg)', sign:-1 },
-  { id:'Achat', label:'Achat (lié au Stock)', shortLabel:'Achat', color:'var(--amber)', bg:'var(--amber-bg)', sign:-1 },
+  { id:'Achat', label:'Achat', shortLabel:'Achat', color:'var(--amber)', bg:'var(--amber-bg)', sign:-1 },
   { id:'Retrait', label:'Retrait gérant → moi', shortLabel:'Retrait', color:'var(--wrap)', bg:'var(--wrap-bg)', sign:-1 },
 ];
 // Types autorisés à la SAISIE d'un nouveau mouvement pour les utilisateurs non-admin.
@@ -1793,10 +1252,14 @@ let dp_avanceDateEnd = '';
 let dp_clotures = [];
 let dp_clotureStart = '';
 let dp_clotureEnd = '';
+let dp_verifications = [];
+let dp_verificationResult = null;
+let dp_verificationBusy = false;
 
 dp_mouvCol.onSnapshot((snap)=>{
   dp_mouvements = [];
   snap.forEach(doc=>dp_mouvements.push({ id: doc.id, ...doc.data() }));
+  dp_verificationResult = null;
   dp_render();
 }, (err)=>console.error(err));
 dp_pointagesCol.onSnapshot((snap)=>{
@@ -1804,6 +1267,16 @@ dp_pointagesCol.onSnapshot((snap)=>{
   snap.forEach(doc=>dp_pointages.push({ id: doc.id, ...doc.data() }));
   dp_render();
 }, (err)=>console.error(err));
+let dp_verificationsUnsub = null;
+function dp_startVerificationListener(){
+  if(dp_verificationsUnsub) return;
+  if(!(session && session.isAdmin)) return;
+  dp_verificationsUnsub = dp_verificationsCol.onSnapshot((snap)=>{
+    dp_verifications = [];
+    snap.forEach(doc=>dp_verifications.push({ id: doc.id, ...doc.data() }));
+    dp_render();
+  }, (err)=>console.error(err));
+}
 dp_cloturesCol.onSnapshot((snap)=>{
   dp_clotures = [];
   snap.forEach(doc=>dp_clotures.push({ id: doc.id, ...doc.data() }));
@@ -1823,13 +1296,115 @@ function dp_computeSolde(mouvements){
   return mouvements.reduce((s,m)=> s + dp_typeMeta(m.type).sign * (Number(m.montant)||0), 0);
 }
 
+function dp_canSee(key){
+  if(session && session.isAdmin) return true;
+  return !!(session && session.permissions && session.permissions[key] !== false);
+}
+function dp_canVerify(){
+  if(session && session.isAdmin) return true;
+  return !!(session && session.permissions && session.permissions.verification !== false && session.permissions.depenses !== false);
+}
+function dp_canSeeVerificationHistory(){
+  return !!(session && session.isAdmin);
+}
+function dp_fmtDateTime(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? esc(iso) : d.toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'medium'});
+}
+async function dp_saveVerification(realAmount){
+  if(!dp_canVerify()) { alert('Vous n’avez pas l’autorisation de vérifier la caisse.'); return null; }
+  if(realAmount==null || !isFinite(realAmount)){ alert('Saisissez un solde réel valide.'); return null; }
+  const now = new Date().toISOString();
+  const soldeTheorique = dp_computeSolde(dp_mouvements);
+  const ecart = realAmount - soldeTheorique;
+  const docRef = dp_verificationsCol.doc();
+  const verification = {
+    id: docRef.id,
+    soldeReel: realAmount,
+    soldeTheorique: soldeTheorique,
+    ecart: ecart,
+    date: now.slice(0,10),
+    dateHeure: now,
+    verifiePar: currentUser,
+    creeLe: now
+  };
+  // Une nouvelle vérification utilise un nouvel ID Firestore : aucune vérification précédente n'est écrasée.
+  await docRef.set(verification);
+  return verification;
+}
+async function dp_verifierSolde(){
+  if(dp_verificationBusy) return;
+  const el = document.getElementById('dp-solde-reel-verification');
+  const raw = el ? el.value : '';
+  const real = raw==='' ? null : dp_parseNum(raw);
+  if(real==null || !isFinite(real)){ alert('Veuillez saisir le solde réel compté avant de cliquer sur Vérification.'); return; }
+  dp_verificationBusy = true;
+  try{
+    const v = await dp_saveVerification(real);
+    if(v) dp_verificationResult = v;
+    dp_render();
+  }catch(e){
+    console.error(e);
+    alert('Erreur lors de la vérification : '+e.message);
+  }finally{ dp_verificationBusy = false; }
+}
+function dp_renderVerificationBox(){
+  if(!dp_canVerify() || !dp_canSee('soldeReel')) return '';
+  const isAdmin = !!(session && session.isAdmin);
+  const v = dp_verificationResult;
+  const soldeTheorique = dp_computeSolde(dp_mouvements);
+  const helper = isAdmin
+    ? 'Vous pouvez consulter le solde théorique, saisir le solde réellement compté, puis lancer la vérification.'
+    : 'Saisissez le montant réellement compté, puis cliquez sur Vérification. Le solde théorique reste masqué.';
+  const theoreticalBox = isAdmin ? `<div class="result-box final" style="margin-top:10px;">
+      <div class="label">Solde théorique</div><div class="value">${dp_fmtMoney(soldeTheorique)}</div>
+    </div>` : '';
+  const displayedEcart = v && dp_canSee('ecart') ? `<div class="result-box ${Math.abs(Number(v.ecart))<0.01?'final':'prelim'}" style="margin:0;flex:1;min-width:220px;">
+      <div class="label">Écart constaté</div><div class="value">${v.ecart>0?'+':''}${dp_fmtMoney(v.ecart)}</div>
+    </div>` : '';
+  return `<div class="ticket" style="padding:16px;margin-bottom:14px;border-color:var(--forest);">
+    <div style="font-size:13px;font-weight:700;margin-bottom:5px;color:var(--forest);">🔎 Vérification du solde</div>
+    <div style="font-size:11.5px;color:var(--ink-muted);margin-bottom:12px;">${helper}</div>
+    ${theoreticalBox}
+    <div class="field" style="margin-top:${isAdmin?'12px':'0'};"><label>Solde réel compté</label><input id="dp-solde-reel-verification" type="text" inputmode="decimal" placeholder="Ex. 25 000" value="${v ? esc(String(v.soldeReel)) : ''}" /></div>
+    <div style="display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap;">
+      <button class="btn" type="button" onclick="dp_verifierSolde()">✓ Vérification</button>
+      ${displayedEcart}
+    </div>
+    ${v && session && session.isAdmin ? `<div style="font-size:10.5px;color:var(--ink-muted);margin-top:8px;">Dernière vérification : ${dp_fmtDateTime(v.dateHeure)}${v.verifiePar?' · par '+esc(v.verifiePar):''}</div>` : ''}
+  </div>`;
+}
+function dp_renderVerificationHistory(){
+  if(!dp_canSeeVerificationHistory()) return '';
+  const rows = dp_verifications.slice().sort((a,b)=>(a.dateHeure||a.creeLe||'')<(b.dateHeure||b.creeLe||'')?1:-1).map(v=>`
+    <div class="ticket" style="padding:12px 14px;">
+      <div class="row-between">
+        <div>
+          <div style="font-size:13px;font-weight:700;">${dp_fmtDateTime(v.dateHeure||v.creeLe)}</div>
+          <div style="font-size:11.5px;color:var(--ink-muted);">${v.verifiePar?'Vérifié par '+esc(v.verifiePar):'Utilisateur non renseigné'}</div>
+        </div>
+        <span class="mono" style="font-weight:700;color:${Number(v.ecart)<0?'var(--rust)':'var(--moss)'};">${v.ecart>0?'+':''}${dp_fmtMoney(v.ecart)}</span>
+      </div>
+      <div class="grid grid-3" style="margin-top:10px;">
+        <div class="field"><label>Solde réel</label><div class="result-box final" style="margin:0;"><div class="value">${dp_fmtMoney(v.soldeReel)}</div></div></div>
+        <div class="field"><label>Solde théorique</label><div class="result-box final" style="margin:0;"><div class="value">${dp_fmtMoney(v.soldeTheorique)}</div></div></div>
+        <div class="field"><label>Écart</label><div class="result-box ${Math.abs(Number(v.ecart))<0.01?'final':'prelim'}" style="margin:0;"><div class="value">${v.ecart>0?'+':''}${dp_fmtMoney(v.ecart)}</div></div></div>
+      </div>
+    </div>`).join('');
+  return `<div class="ticket" style="border-color:var(--forest);background:var(--surface);">
+    <div style="font-size:13px;font-weight:700;color:var(--forest);">📋 Historique complet des vérifications</div>
+    <div style="font-size:11.5px;color:var(--ink-muted);margin-top:4px;">Chaque clic sur « Vérification » crée une nouvelle entrée. Les vérifications précédentes ne sont pas remplacées.</div>
+  </div>${rows || `<p style="font-size:12.5px;color:var(--ink-muted);">Aucune vérification enregistrée.</p>`}`;
+}
+
 async function dp_deleteMouvement(id){
   const m = dp_mouvements.find(x=>x.id===id);
   if(m){
     const closure = dp_closureFor(m.date);
     if(closure){ alert(`Cette période (${fmtDateShort(closure.dateDebut)} → ${fmtDateShort(closure.dateFin)}) est clôturée. Réouvrez-la dans l'onglet Clôtures pour modifier.`); return; }
   }
-  if(!confirm('Supprimer ce mouvement ? (Un achat déjà transféré au Stock ne sera PAS retiré du Stock automatiquement.)')) return;
+  if(!confirm('Supprimer ce mouvement ?')) return;
   await dp_mouvCol.doc(id).delete();
 }
 async function dp_savePointage(p){
@@ -1852,11 +1427,15 @@ function dp_render(){
 
   const isAdmin = session && session.isAdmin;
   if(dp_currentTab==='tableau' || dp_currentTab==='pointage') dp_currentTab = 'mouvements';
+  if(dp_currentTab==='verification' && !dp_canVerify()) dp_currentTab = 'mouvements';
+  if(dp_currentTab==='historiqueVerification' && !dp_canSeeVerificationHistory()) dp_currentTab = 'mouvements';
   if(!isAdmin && (dp_currentTab==='clotures' || dp_currentTab==='avances')) dp_currentTab = 'mouvements';
 
   dp_renderTabs();
   const main = document.getElementById('depenses-main');
   if(dp_currentTab==='mouvements') main.innerHTML = dp_renderMouvementsTab();
+  else if(dp_currentTab==='verification') main.innerHTML = dp_renderVerificationBox();
+  else if(dp_currentTab==='historiqueVerification') main.innerHTML = dp_renderVerificationHistory();
   else if(dp_currentTab==='avances') main.innerHTML = dp_renderAvancesTab();
   else if(dp_currentTab==='clotures') main.innerHTML = dp_renderCloturesTab();
   else main.innerHTML = dp_renderMouvementsTab();
@@ -1870,8 +1449,8 @@ function dp_setTab(t){ dp_currentTab = t; dp_render(); }
 function dp_renderTabs(){
   const isAdmin = session && session.isAdmin;
   const tabs = isAdmin
-    ? [ {id:'mouvements', label:'Mouvements'}, {id:'avances', label:'Avances salaire'}, {id:'clotures', label:'🔒 Clôtures'} ]
-    : [ {id:'mouvements', label:'Mouvements'} ];
+    ? [ {id:'mouvements', label:'Mouvements'}, {id:'verification', label:'🔎 Vérification'}, {id:'historiqueVerification', label:'📋 Historique'}, {id:'avances', label:'Avances salaire'}, {id:'clotures', label:'🔒 Clôtures'} ]
+    : [ {id:'mouvements', label:'Mouvements'}, {id:'verification', label:'🔎 Vérification'} ];
   document.getElementById('depenses-tabs').innerHTML = tabs.map(t=>`
     <button class="${dp_currentTab===t.id?'active':''}" onclick="dp_setTab('${t.id}')">${esc(t.label)}</button>
   `).join('');
@@ -1951,6 +1530,58 @@ function dp_renderTableauTab(){
   return periodBar + summary + breakdownBox + dailyBox;
 }
 
+function dp_exportMouvementsExcel(){
+  if(!(session && session.isAdmin)){ alert('Seule l’administratrice peut exporter les mouvements.'); return; }
+  if(typeof XLSX==='undefined'){ alert('Le module Excel n’est pas disponible. Vérifiez votre connexion puis réessayez.'); return; }
+
+  let rows = dp_mouvements.slice();
+  if(dp_dateFilterStart) rows = rows.filter(m=>m.date>=dp_dateFilterStart);
+  if(dp_dateFilterEnd) rows = rows.filter(m=>m.date<=dp_dateFilterEnd);
+  if(dp_typeFilter!=='Tous') rows = rows.filter(m => (dp_typeMeta(m.type).sign>0 ? 'in' : 'out') === dp_typeFilter);
+  if(dp_searchTerm.trim()){
+    const q=dp_searchTerm.trim().toLowerCase();
+    rows=rows.filter(m=>[m.libelle,m.articleNom,m.fournisseur,m.employeNom,m.creePar,m.modifiePar,m.type,m.unite].filter(Boolean).join(' ').toLowerCase().includes(q));
+  }
+  rows.sort((a,b)=> (a.date||'').localeCompare(b.date||'') || (a.creeLe||'').localeCompare(b.creeLe||''));
+
+  const exportRows = rows.map(m=>{
+    const sign = dp_typeMeta(m.type).sign;
+    const montant = Number(m.montant)||0;
+    return {
+      'Date': m.date || '',
+      'Type': m.type || '',
+      'Sens': sign>0 ? 'Entrée' : 'Sortie',
+      'Désignation / Motif': m.articleNom || m.libelle || '',
+      'Quantité': m.quantite ?? '',
+      'Unité': m.unite || '',
+      'Prix unitaire (DA)': (m.type==='Achat' && m.quantite) ? montant/Number(m.quantite) : '',
+      'Montant (DA)': montant,
+      'Fournisseur': m.fournisseur || '',
+      'Employé': m.employeNom || '',
+      'Avance salaire': m.estAvanceSalaire ? 'Oui' : 'Non',
+      'Saisi par': m.creePar || '',
+      'Date/heure saisie': m.creeLe || '',
+      'Modifié par': m.modifiePar || '',
+      'Date/heure modification': m.modifieLe || '',
+      'Pointé': m.pointe ? 'Oui' : 'Non',
+      'ID mouvement': m.id || ''
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(exportRows.length ? exportRows : [{ 'Information':'Aucun mouvement pour les critères sélectionnés.' }]);
+  ws['!cols']=[
+    {wch:12},{wch:14},{wch:10},{wch:30},{wch:12},{wch:10},{wch:18},{wch:16},{wch:24},{wch:22},{wch:16},{wch:18},{wch:24},{wch:18},{wch:26},{wch:10},{wch:30}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Mouvements');
+
+  const filters = [];
+  if(dp_dateFilterStart) filters.push('du_'+dp_dateFilterStart);
+  if(dp_dateFilterEnd) filters.push('au_'+dp_dateFilterEnd);
+  const suffix = filters.length ? '_'+filters.join('_') : '_tous';
+  XLSX.writeFile(wb, `mouvements_depenses${suffix}.xlsx`);
+}
+
 function dp_renderMouvementsTab(){
   const isAdmin = session && session.isAdmin;
   let filtered = dp_typeFilter==='Tous' ? dp_mouvements : dp_mouvements.filter(m=> (dp_typeMeta(m.type).sign>0 ? 'in' : 'out') === dp_typeFilter);
@@ -2019,9 +1650,10 @@ function dp_renderMouvementsTab(){
   const filterChips = `<h2 class="section">Mouvements déjà enregistrés</h2>
     <div class="ticket" style="padding:10px 14px;margin-bottom:10px;">
       <div class="search-wrap" style="${isAdmin?'margin-bottom:10px;':''}"><span class="icon">🔎</span><input type="text" id="dp-search" placeholder="Rechercher (motif, fournisseur, article, employé, saisi par…)" value="${esc(dp_searchTerm)}" oninput="dp_searchTerm=this.value;dp_render()" /></div>
-      ${isAdmin ? `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      ${isAdmin ? `<div style="display:flex;align-items:end;gap:10px;flex-wrap:wrap;">
         <div class="field" style="flex:1;min-width:130px;margin:0;"><label>Du</label><input type="date" id="dp-date-filter-start" value="${dp_dateFilterStart}" onchange="dp_dateFilterStart=this.value;dp_render()" /></div>
         <div class="field" style="flex:1;min-width:130px;margin:0;"><label>Au</label><input type="date" id="dp-date-filter-end" value="${dp_dateFilterEnd}" onchange="dp_dateFilterEnd=this.value;dp_render()" /></div>
+        <button class="btn small" style="white-space:nowrap;" onclick="dp_exportMouvementsExcel()">📊 Télécharger Excel</button>
         ${(hasDateFilter||dp_searchTerm) ? `<button class="btn ghost small" onclick="dp_dateFilterStart='';dp_dateFilterEnd='';dp_searchTerm='';dp_render()">✕ Effacer</button>` : ''}
       </div>` : ''}
     </div>
@@ -2049,7 +1681,8 @@ function dp_renderMouvementsTab(){
       </div>`;
     }).join('');
 
-  return soldeBox + addBar + form + draftBox + filterChips + list;
+  const verificationBox = dp_renderVerificationBox();
+  return soldeBox + verificationBox + addBar + form + draftBox + filterChips + list;
 }
 
 function dp_openEditMouv(id){
@@ -2079,8 +1712,6 @@ function dp_renderMouvForm(){
   if(!(session && session.isAdmin) && !DP_TYPES_NON_ADMIN.includes(dp_formType)) dp_formType = 'Achat';
   const E = dp_editPrefill || {};
   const isEditing = !!dp_editingMouvId;
-  const articleDatalist = (st_state.articles||[]).filter(a=>a.achatGerant!==false).map(a=>`<option value="${esc(a.nom)}">`).join('');
-  const hasEligibleArticles = (st_state.articles||[]).some(a=>a.achatGerant!==false);
   const employeeSuggestions = EMPLOYES_TOUS.map(n=>`<option value="${esc(n)}">`).join('');
   const direction = dp_typeMeta(dp_formType).sign > 0 ? 'in' : 'out';
   const allowedTypes = dp_allowedTypes();
@@ -2119,11 +1750,9 @@ function dp_renderMouvForm(){
         <div class="form-section">
           <div class="section-label"><span class="num">3</span>Article et quantité</div>
           <div class="grid grid-2">
-            <div class="field" style="grid-column:1/-1;"><label>Article (liste Stock — comptabilisés uniquement)</label>
-              ${hasEligibleArticles
-                ? `<input type="text" id="dp-article" list="dp-article-datalist" placeholder="Tapez pour rechercher…" value="${esc(E.type==='Achat'?(E.articleNom||''):'')}" /><datalist id="dp-article-datalist">${articleDatalist}</datalist>`
-                : `<input type="text" disabled placeholder="Aucun article éligible — activez « Achat comptabilisé » dans Stock" />`}
-            </div>
+             <div class="field" style="grid-column:1/-1;"><label>Article / désignation</label>
+               <input type="text" id="dp-article" placeholder="Ex. Saumon, riz, emballages…" value="${esc(E.type==='Achat'?(E.articleNom||''):'')}" />
+             </div>
             <div class="field"><label>Quantité</label><input type="text" inputmode="decimal" id="dp-qty" placeholder="0" value="${E.type==='Achat'&&E.quantite!=null?esc(String(E.quantite)):''}" oninput="dp_updateAchatCalc()" /></div>
             <div class="field"><label>Mode de saisie</label>
               <div class="filter-row" style="margin:0;">
@@ -2142,10 +1771,9 @@ function dp_renderMouvForm(){
         <div class="form-section">
           <div class="section-label"><span class="num">4</span>Compléments (optionnel)</div>
           <div class="grid grid-2">
-            <div class="field"><label>Fournisseur</label><input type="text" id="dp-fourn" value="${esc(E.type==='Achat'?(E.fournisseur||E.stockEntry&&E.stockEntry.fournisseur||''):'')}" /></div>
-            <div class="field"><label>Date péremption</label><input type="date" id="dp-dlc" value="${E.type==='Achat'&&E.stockEntry?esc(E.stockEntry.datePeremption||''):''}" /></div>
+            <div class="field"><label>Fournisseur</label><input type="text" id="dp-fourn" value="${esc(E.type==='Achat'?(E.fournisseur||''):'')}" /></div>
+             <div class="field"><label>Unité</label><input type="text" id="dp-unite" value="${esc(E.type==='Achat'?(E.unite||''):'')}" placeholder="kg, L, unité…" /></div>
           </div>
-          <div style="margin-top:10px;font-size:12px;color:var(--ink-muted);border-left:2px solid var(--amber);padding-left:10px;">Cet achat sera automatiquement ${isEditing?'mis à jour dans':'ajouté comme entrée dans'} le module Stock.</div>
         </div>
       ` : `
         <div class="form-section">
@@ -2207,11 +1835,6 @@ function dp_updateAchatCalc(){
     previewEl.textContent = (qty && montant) ? `= ${dp_fmtMoney(montant/qty)} / unité` : '';
   }
 }
-function dp_resolveArticleByName(typed){
-  const clean = (typed||'').trim().toLowerCase();
-  if(!clean) return null;
-  return (st_state.articles||[]).filter(a=>a.achatGerant!==false).find(a=>a.nom.trim().toLowerCase()===clean) || null;
-}
 
 async function dp_submitMouv(){
   if(!currentUser){ askUserName(false); if(!currentUser) return; }
@@ -2221,9 +1844,8 @@ async function dp_submitMouv(){
   if(closure){ alert(`La date sélectionnée (${fmtDateShort(date)}) fait partie d'une période clôturée (${fmtDateShort(closure.dateDebut)} → ${fmtDateShort(closure.dateFin)}). Réouvrez-la dans l'onglet Clôtures pour modifier.`); return; }
   let mouv;
   if(dp_formType==='Achat'){
-    const typed = document.getElementById('dp-article') ? document.getElementById('dp-article').value : '';
-    const article = dp_resolveArticleByName(typed);
-    if(!article){ alert('Article introuvable. Sélectionnez un article existant dans la liste (tapez pour filtrer).'); return; }
+    const typed = document.getElementById('dp-article') ? document.getElementById('dp-article').value.trim() : '';
+    if(!typed){ alert('Merci de renseigner la désignation de l’achat.'); return; }
     const qty = dp_parseNum(document.getElementById('dp-qty').value);
     if(!qty){ alert('Merci de renseigner une quantité.'); return; }
     let prix, montantTotal;
@@ -2234,33 +1856,23 @@ async function dp_submitMouv(){
       montantTotal = dp_parseNum(document.getElementById('dp-montant-total').value);
       prix = qty ? montantTotal/qty : 0;
     }
+    if(!montantTotal){ alert('Merci de renseigner le montant de l’achat.'); return; }
     const fournisseur = document.getElementById('dp-fourn').value;
-    const datePeremption = document.getElementById('dp-dlc').value;
+    const unite = document.getElementById('dp-unite').value.trim();
 
     if(dp_editingMouvId){
       const original = dp_mouvements.find(m=>m.id===dp_editingMouvId);
-      const stockEntryId = original && original.stockEntry ? original.stockEntry.id : uid();
-      const stockEntry = {
-        id: stockEntryId, articleId: article.id, date,
-        quantite: qty, prixUnitaire: prix||0,
-        datePeremption, fournisseur, numeroLot: '', par: (original&&original.stockEntry&&original.stockEntry.par)||currentUser,
-      };
-      // Met à jour (ou recrée si introuvable) l'entrée correspondante dans le module Stock.
-      const idx = st_state.entries.findIndex(e=>e.id===stockEntryId);
-      if(idx>-1) st_state.entries[idx] = stockEntry; else st_state.entries.push(stockEntry);
-      await st_saveState();
       mouv = {
         ...original, type:'Achat', date, montant: montantTotal,
-        articleId: article.id, articleNom: article.nom, quantite: qty, unite: article.unite,
-        stockEntry, modifiePar: currentUser, modifieLe: new Date().toISOString(),
+        articleNom: typed, quantite: qty, unite, fournisseur,
+        modifiePar: currentUser, modifieLe: new Date().toISOString(),
       };
       await dp_mouvCol.doc(dp_editingMouvId).set(mouv);
     } else {
-      const stockEntry = { id: uid(), articleId: article.id, date, quantite: qty, prixUnitaire: prix||0, datePeremption, fournisseur, numeroLot: '', par: currentUser };
       mouv = {
         id: uid(), type:'Achat', date, montant: montantTotal,
-        articleId: article.id, articleNom: article.nom, quantite: qty, unite: article.unite,
-        stockEntry, pointe:false, creePar: currentUser, creeLe: new Date().toISOString(),
+        articleNom: typed, quantite: qty, unite, fournisseur,
+        pointe:false, creePar: currentUser, creeLe: new Date().toISOString(),
       };
       dp_draft.push(mouv);
     }
@@ -2309,16 +1921,10 @@ async function dp_saveDraftDay(){
   try{
     if(syncEl) syncEl.textContent = 'Enregistrement…';
     const batch = db.batch();
-    let stockChanged = false;
     dp_draft.forEach(m=>{
       batch.set(dp_mouvCol.doc(m.id), m);
-      if(m.type==='Achat' && m.stockEntry){
-        st_state.entries.push(m.stockEntry);
-        stockChanged = true;
-      }
     });
     await batch.commit();
-    if(stockChanged) await st_saveState();
     const count = dp_draft.length;
     dp_draft = [];
     if(syncEl) syncEl.textContent = '✓ Synchronisé';
@@ -2333,69 +1939,9 @@ async function dp_saveDraftDay(){
 
 /* ---------------- Onglet Pointage ---------------- */
 function dp_renderPointageTab(){
-  const solde = dp_computeSolde(dp_mouvements);
-  const nonPointes = dp_mouvements.filter(m=>!m.pointe).sort((a,b)=>a.date<b.date?-1:1);
-
-  const form = dp_showPointageForm ? `
-    <div class="ticket" style="padding:16px;">
-      <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--forest);">Nouveau pointage</div>
-      <div class="grid grid-2">
-        <div class="field"><label>Solde théorique</label><input type="text" value="${dp_fmtMoney(solde)}" disabled /></div>
-        <div class="field"><label>Montant compté (optionnel)</label><input type="text" inputmode="decimal" id="dp-compte" placeholder="Si vous comptez le liquide" /></div>
-        <div class="field" style="grid-column:1/-1;"><label>Note (optionnel)</label><input type="text" id="dp-note" placeholder="Remarques" /></div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <button type="button" class="btn ghost small" onclick="dp_quickFollowup('AppointMoi')">💰 Lui faire un appoint</button>
-        <button type="button" class="btn ghost small" onclick="dp_quickFollowup('Retrait')">💸 Reprendre une somme</button>
-      </div>
-      <div style="margin-top:14px;">
-        <label style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:var(--ink-muted);">Mouvements non pointés — cochez ceux vérifiés (facultatif, selon le temps disponible)</label>
-        <div style="margin-top:8px;">
-          ${nonPointes.length===0?`<p style="font-size:12px;color:var(--ink-muted);">Tout est déjà pointé.</p>`:
-            nonPointes.map(m=>{
-              const meta = dp_typeMeta(m.type);
-              const detail = m.type==='Achat' ? esc(m.articleNom||'') : esc(m.libelle||'');
-              return `<label style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--line);font-size:12.5px;">
-                <input type="checkbox" id="dp-check-${m.id}" style="width:auto;" ${dp_pointageChecks[m.id]?'checked':''} onchange="dp_pointageChecks['${m.id}']=this.checked" />
-                <span class="chip" style="color:${meta.color};background:${meta.bg};">${esc(m.type)}</span>
-                <span style="flex:1;">${fmtDateShort(m.date)} · ${detail}</span>
-                <span class="mono">${dp_fmtMoney(m.montant)}</span>
-              </label>`;
-            }).join('')
-          }
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:14px;">
-        <button class="btn" onclick="dp_submitPointage()">✓ Enregistrer le pointage</button>
-        <button class="btn ghost" onclick="dp_showPointageForm=false;dp_pointageChecks={};dp_render()">Annuler</button>
-      </div>
-    </div>
-  ` : '';
-
-  const history = dp_pointages.slice().sort((a,b)=>a.date<b.date?1:-1).map(p=>`
-    <div class="ticket" style="padding:12px 14px;">
-      <div class="row-between">
-        <div>
-          <div style="font-size:13.5px;font-weight:600;">${fmtDateShort(p.date)}</div>
-          <div style="font-size:11.5px;color:var(--ink-muted);">Théorique : ${dp_fmtMoney(p.soldeTheorique)}${p.montantCompte!=null && p.montantCompte!==''?` · Compté : ${dp_fmtMoney(p.montantCompte)}`:''}${p.enregistreParEn?' · par '+esc(p.enregistreParEn):''}</div>
-          ${p.note?`<div style="font-size:11.5px;color:var(--ink-muted);margin-top:2px;">${esc(p.note)}</div>`:''}
-        </div>
-        ${p.montantCompte!=null && p.montantCompte!==''?`<div class="mono" style="font-weight:700;color:${Math.abs(p.ecart)<0.01?'var(--moss)':'var(--rust)'};">${p.ecart>0?'+':''}${dp_fmtMoney(p.ecart)}</div>`:''}
-      </div>
-    </div>
-  `).join('');
-
-  return `
-    <div class="result-box ${solde>=0?'final':'prelim'}" style="margin-bottom:14px;">
-      <div class="label">Solde théorique actuel</div>
-      <div class="value">${dp_fmtMoney(solde)}</div>
-    </div>
-    <button class="btn" onclick="dp_showPointageForm=true;dp_pointageChecks={};dp_render()">+ Nouveau pointage</button>
-    ${form}
-    <h2 class="section" style="margin-top:20px;">Historique des pointages</h2>
-    ${dp_pointages.length===0?`<p style="font-size:13px;color:var(--ink-muted);">Aucun pointage enregistré.</p>`:history}
-  `;
+  return dp_renderVerificationBox();
 }
+
 function dp_quickFollowup(type){
   const soldeTheorique = dp_computeSolde(dp_mouvements);
   const compteEl = document.getElementById('dp-compte');
@@ -2413,21 +1959,10 @@ function dp_quickFollowup(type){
   }
 }
 async function dp_submitPointage(){
-  const solde = dp_computeSolde(dp_mouvements);
-  const compteRaw = document.getElementById('dp-compte').value;
-  const compte = compteRaw==='' ? null : dp_parseNum(compteRaw);
-  const note = document.getElementById('dp-note').value;
-  const mouvementsValides = Object.keys(dp_pointageChecks).filter(id=>dp_pointageChecks[id]);
-  const p = {
-    id: uid(), date: todayISO(), soldeTheorique: solde,
-    montantCompte: compte, ecart: compte!=null ? (compte - solde) : null,
-    note, mouvementsValides,
-    enregistreParEn: currentUser, enregistreLe: new Date().toISOString(),
-  };
-  await dp_savePointage(p);
-  dp_showPointageForm = false; dp_pointageChecks = {};
-  dp_render();
+  // Compatibilité avec d'anciennes sessions : la nouvelle procédure utilise Vérification.
+  return dp_verifierSolde();
 }
+
 
 /* ---------------- Onglet Avances salaire ---------------- */
 function dp_renderAvancesTab(){
@@ -2569,399 +2104,6 @@ async function dp_recloturer(id){
 }
 
 dp_render();
-
-/* ==================== MODULE CUISINE ==================== */
-const ku_itemsCol = db.collection('cuisine_items');
-const ku_checksCol = db.collection('cuisine_ingredient_checks');
-const mp_itemsCol = db.collection('cuisine_miseenplace_items');
-const mp_checksCol = db.collection('cuisine_miseenplace_checks');
-
-const KU_CATEGORIES = ['Ingrédient', 'Préparation'];
-const KU_STATUTS = [
-  { id:'ok',      label:'Disponible', ic:'✅', color:'var(--moss)', bg:'var(--moss-bg)' },
-  { id:'faible',  label:'Faible',     ic:'⚠️', color:'var(--amber)', bg:'var(--amber-bg)' },
-  { id:'rupture', label:'Rupture',    ic:'❌', color:'var(--rust)', bg:'var(--rust-bg)' },
-];
-function ku_statutMeta(id){ return KU_STATUTS.find(s=>s.id===id) || null; }
-
-let ku_items = [];              // liste maître des ingrédients/préparations à checker
-let ku_checksByDate = {};       // { date: { entries: { itemId: {status, checkedBy, checkedAt} } } }
-let mp_items = [];              // liste maître de la mise en place
-let mp_checksByDate = {};       // { date: { entries: { itemId: {checked, checkedBy, checkedAt} } } }
-
-let cu_currentTab = 'ingredients';
-let cu_workingDate = todayISO();
-let ku_viewAll = false;         // admin : voir tous les cuisiniers au lieu de "mes articles"
-let ku_manageMode = false;
-let ku_showItemForm = false;
-let ku_editingItemId = null;
-let ku_itemForm = { nom:'', categorie:'Ingrédient', seuil:'', unite:'', assignedTo:[] };
-let ku_showBulkImport = false;
-let ku_bulkText = '';
-let mp_manageMode = false;
-let mp_showItemForm = false;
-let mp_newItemNom = '';
-let mp_showBulkImport = false;
-let mp_bulkText = '';
-
-ku_itemsCol.onSnapshot(snap=>{
-  ku_items = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-  cu_render();
-}, err=>console.error(err));
-ku_checksCol.onSnapshot(snap=>{
-  ku_checksByDate = {};
-  snap.forEach(doc=> ku_checksByDate[doc.id] = doc.data());
-  cu_render();
-}, err=>console.error(err));
-mp_itemsCol.onSnapshot(snap=>{
-  mp_items = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=>(a.ordre||0)-(b.ordre||0));
-  cu_render();
-}, err=>console.error(err));
-mp_checksCol.onSnapshot(snap=>{
-  mp_checksByDate = {};
-  snap.forEach(doc=> mp_checksByDate[doc.id] = doc.data());
-  cu_render();
-}, err=>console.error(err));
-
-function cu_setTab(t){ cu_currentTab = t; cu_render(); }
-function cu_render(){
-  if(!session) return; // pas encore connecté : rien à afficher tant qu'il n'y a pas de session
-  document.getElementById('cuisine-tabs').innerHTML = `
-    <button class="${cu_currentTab==='ingredients'?'active':''}" onclick="cu_setTab('ingredients')">🧺 Ingrédients</button>
-    <button class="${cu_currentTab==='miseenplace'?'active':''}" onclick="cu_setTab('miseenplace')">🍱 Mise en place</button>
-  `;
-  const main = document.getElementById('cuisine-main');
-  if(cu_currentTab==='ingredients') main.innerHTML = ku_renderTab();
-  else main.innerHTML = mp_renderTab();
-}
-
-/* ---------------- Onglet Ingrédients (checklist du soir, assignée par cuisinier) ---------------- */
-function ku_myItems(){
-  if(!session) return [];
-  return ku_items.filter(it => (it.assignedTo||[]).includes(session.username));
-}
-function ku_computeStatus(item, qty){
-  const q = Number(qty);
-  if(isNaN(q) || q<=0) return 'rupture';
-  const seuil = Number(item.seuil)||0;
-  if(q <= seuil) return 'faible';
-  return 'ok';
-}
-async function ku_setQuantity(itemId, qty){
-  const item = ku_items.find(it=>it.id===itemId);
-  if(!item) return;
-  const today = todayISO();
-  const checkedToday = item.dernierCheckedAt && item.dernierCheckedAt.slice(0,10)===today;
-  if(checkedToday && !(session && session.isAdmin)){
-    alert("Cet article a déjà été saisi aujourd'hui. Seule l'administratrice peut le modifier.");
-    cu_render();
-    return;
-  }
-  const q = ku_parseNum(qty);
-  const status = ku_computeStatus(item, q);
-  const now = new Date().toISOString();
-  // Valeur courante stockée sur l'article lui-même : elle reste affichée telle quelle
-  // tant qu'un cuisinier ne resaisit pas une quantité, quel que soit le nombre de jours écoulés.
-  await ku_itemsCol.doc(itemId).set({
-    dernierQuantite: q, dernierStatut: status, dernierCheckedBy: currentUser, dernierCheckedAt: now
-  }, { merge:true });
-  // Historique (facultatif, pour archive) : un enregistrement par jour de vérification.
-  await ku_checksCol.doc(today).set({
-    date: today,
-    entries: { [itemId]: { quantite: q, status, checkedBy: currentUser, checkedAt: now } }
-  }, { merge:true });
-}
-function ku_parseNum(v){ if(v===null||v===undefined||v==='') return 0; const n = Number(String(v).replace(',','.')); return isNaN(n)?0:n; }
-
-function ku_renderTab(){
-  const isAdmin = session && session.isAdmin;
-  const showAll = isAdmin && ku_viewAll;
-  const list = showAll ? ku_items : ku_myItems();
-  const today = todayISO();
-
-  const viewBar = isAdmin ? `<div class="ticket" style="padding:12px 14px;">
-    <button class="btn ghost small" onclick="ku_viewAll=!ku_viewAll;cu_render()">${ku_viewAll?'👤 Voir mes articles':'👥 Voir tous les cuisiniers'}</button>
-  </div>` : '';
-
-  // Résumé des ruptures / faibles (état courant, tous cuisiniers confondus)
-  const ruptures = ku_items.filter(it=>it.dernierStatut==='rupture');
-  const faibles = ku_items.filter(it=>it.dernierStatut==='faible');
-
-  const summary = (ruptures.length>0 || faibles.length>0) ? `
-    <div class="ticket" style="border-color:var(--rust);">
-      ${ruptures.length>0 ? `<div style="font-size:12.5px;font-weight:700;color:var(--rust);margin-bottom:4px;">❌ En rupture (${ruptures.length}) : ${ruptures.map(x=>esc(x.nom)).join(', ')}</div>` : ''}
-      ${faibles.length>0 ? `<div style="font-size:12.5px;font-weight:700;color:var(--amber);">⚠️ Stock faible (${faibles.length}) : ${faibles.map(x=>esc(x.nom)).join(', ')}</div>` : ''}
-    </div>` : '';
-
-  const manageBar = isAdmin ? `
-    <div class="row-between" style="margin:14px 0 6px;">
-      <h2 class="section" style="margin:0;">${showAll ? 'Tous les articles' : 'Mes articles à vérifier'}</h2>
-      <button style="background:none;border:none;color:var(--forest);font-size:12px;font-weight:600;cursor:pointer;" onclick="ku_manageMode=!ku_manageMode;cu_render()">${ku_manageMode?'Terminer':'⚙️ Gérer la liste'}</button>
-    </div>
-  ` : `<h2 class="section">Mes articles à vérifier ce soir</h2>`;
-
-  const manageForm = (isAdmin && ku_manageMode) ? ku_renderManageForm() : '';
-
-  const checkedTodayCount = list.filter(it=>it.dernierCheckedAt && it.dernierCheckedAt.slice(0,10)===today).length;
-  const progressLabel = list.length>0 ? `<div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">${checkedTodayCount} / ${list.length} revérifié(s) aujourd'hui</div>` : '';
-
-  const grouped = KU_CATEGORIES.map(cat => ({ cat, items: list.filter(it=>it.categorie===cat) })).filter(g=>g.items.length>0);
-
-  const itemsHtml = list.length===0
-    ? `<div class="empty-state">${showAll ? "Aucun article dans la liste. Ajoutez-en via « Gérer la liste »." : "Aucun article ne vous a été assigné. Demandez à l'administrateur de vous en attribuer via « Gérer la liste »."}</div>`
-    : grouped.map(g => `
-      <h2 class="section" style="margin-top:16px;">${esc(g.cat)}${g.cat==='Ingrédient'?'s':'s'}</h2>
-      ${g.items.map(it=>{
-        const assignedNames = showAll ? (it.assignedTo||[]).join(', ') : '';
-        const statutMeta = it.dernierStatut ? ku_statutMeta(it.dernierStatut) : null;
-        const seuil = Number(it.seuil)||0;
-        const checkedToday = it.dernierCheckedAt && it.dernierCheckedAt.slice(0,10)===today;
-        let lastCheckLabel = '';
-        if(it.dernierCheckedBy){
-          lastCheckLabel = checkedToday
-            ? ` · vérifié par ${esc(it.dernierCheckedBy)} aujourd'hui`
-            : ` · dernière vérif. par ${esc(it.dernierCheckedBy)} le ${fmtDateShort(it.dernierCheckedAt.slice(0,10))} — à revérifier`;
-        }
-        return `<div class="ticket" style="padding:12px 14px;${statutMeta?`border-color:${statutMeta.color};`:''}">
-          <div class="row-between" style="margin-bottom:2px;">
-            <div style="font-size:14px;font-weight:600;">${esc(it.nom)}</div>
-            ${statutMeta ? `<span class="chip" style="color:${statutMeta.color};background:${statutMeta.bg};">${statutMeta.ic} ${esc(statutMeta.label)}</span>` : ''}
-          </div>
-          <div style="font-size:11px;color:${checkedToday?'var(--ink-muted)':'var(--amber)'};margin-bottom:8px;">
-            Seuil disponible : > ${st_fmtNum(seuil)} ${esc(it.unite||'')}
-            ${showAll && it.assignedTo && it.assignedTo.length>0 ? ` · Assigné à : ${esc(assignedNames)}` : ''}
-            ${lastCheckLabel}
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            ${(isAdmin || !checkedToday) ? `
-              <input type="text" inputmode="decimal" placeholder="Quantité" value="${it.dernierQuantite!=null?esc(String(it.dernierQuantite)):''}" style="flex:1;" onchange="ku_setQuantity('${it.id}',this.value)" />
-              <span style="font-size:12.5px;color:var(--ink-muted);min-width:36px;">${esc(it.unite||'')}</span>
-            ` : `
-              <div style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink-muted);">${it.dernierQuantite!=null?esc(String(it.dernierQuantite)):'—'} ${esc(it.unite||'')}</div>
-              <span style="font-size:10.5px;color:var(--ink-muted);max-width:90px;">🔒 Déjà saisi — seule l'administratrice peut modifier</span>
-            `}
-          </div>
-        </div>`;
-      }).join('')}
-    `).join('');
-
-  return viewBar + summary + manageBar + manageForm + progressLabel + itemsHtml;
-}
-
-function ku_renderManageForm(){
-  const cooks = usersCache.filter(u=>!u.isAdmin || u.isAdmin); // tous les utilisateurs (admin inclus, on peut s'auto-assigner)
-  const bulkImportBox = `<div class="ticket" style="border:2px solid var(--forest);background:var(--moss-bg);">
-    <div class="row-between" style="margin-bottom:${ku_showBulkImport?'10px':'0'};">
-      <div style="font-size:14px;font-weight:800;color:var(--forest);">📋 Import en masse (recommandé)</div>
-      <button class="btn moss small" onclick="ku_showBulkImport=!ku_showBulkImport;cu_render()">${ku_showBulkImport?'Fermer':'Ouvrir'}</button>
-    </div>
-    ${ku_showBulkImport ? `
-      <div style="font-size:11.5px;color:var(--ink-muted);margin-bottom:8px;">Une ligne par article, format : <code>Nom | Catégorie | Seuil | Unité</code><br/>Catégorie = Ingrédient ou Préparation. Les articles seront ajoutés sans assignation (à faire ensuite).</div>
-      <textarea id="ku-bulk-text" rows="8" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:'IBM Plex Mono',monospace;" placeholder="Nori | Ingrédient | 5 | paquets&#10;Sauce gyoza | Préparation | 1 | litres">${esc(ku_bulkText)}</textarea>
-      <button class="btn moss" style="margin-top:10px;" onclick="ku_bulkImport()">📋 Importer ces articles</button>
-    ` : ''}
-  </div>`;
-  const openForm = ku_showItemForm ? `
-    <div class="ticket" style="padding:16px;">
-      <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--forest);">${ku_editingItemId ? "Modifier l'article" : 'Nouvel article à checker'}</div>
-      <div class="field" style="margin-bottom:10px;"><label>Nom</label><input type="text" id="ku-if-nom" value="${esc(ku_itemForm.nom)}" placeholder="Ex. Nori, Sauce gyoza…" /></div>
-      <div class="grid grid-2" style="margin-bottom:10px;">
-        <div class="field"><label>Seuil disponible (unités)</label><input type="text" inputmode="decimal" id="ku-if-seuil" value="${esc(String(ku_itemForm.seuil!=null?ku_itemForm.seuil:''))}" placeholder="Ex. 5" /></div>
-        <div class="field"><label>Unité</label><input type="text" id="ku-if-unite" value="${esc(ku_itemForm.unite||'')}" placeholder="Ex. paquets, kg…" /></div>
-      </div>
-      <div style="font-size:11px;color:var(--ink-muted);margin:-4px 0 12px;">Rupture si quantité = 0 · Faible si 0 &lt; quantité ≤ seuil · Disponible si quantité &gt; seuil</div>
-      <div class="field" style="margin-bottom:10px;"><label>Catégorie</label>
-        <div class="filter-row" style="margin:0;">
-          ${KU_CATEGORIES.map(c=>`<button type="button" class="filter-chip ${ku_itemForm.categorie===c?'active':''}" style="${ku_itemForm.categorie===c?'background:var(--forest);border-color:var(--forest);color:#fff;':''}" onclick="ku_itemForm.categorie='${c}';cu_render()">${esc(c)}</button>`).join('')}
-        </div>
-      </div>
-      <div class="field">
-        <label>Assigné à (cuisinier(s) responsable(s) de la vérification)</label>
-        ${cooks.map(u=>`
-          <div class="perm-row">
-            <span>${esc(u.username||u.id)}${u.isAdmin?' <span class="badge-admin">Admin</span>':''}</span>
-            <label class="switch"><input type="checkbox" ${ku_itemForm.assignedTo.includes(u.id)?'checked':''} onchange="ku_toggleAssign('${u.id}',this.checked)"><span class="slider"></span></label>
-          </div>
-        `).join('')}
-      </div>
-      <div style="display:flex;gap:8px;margin-top:14px;">
-        <button class="btn moss" onclick="ku_saveItem()">${ku_editingItemId ? 'Enregistrer' : 'Ajouter'}</button>
-        <button class="btn ghost" onclick="ku_closeItemForm()">Annuler</button>
-      </div>
-    </div>
-  ` : `<button class="btn" style="margin-bottom:10px;" onclick="ku_openItemForm()">+ Nouvel article</button>`;
-
-  const list = ku_items.length===0 ? '' : `<div style="margin-top:10px;">
-    ${ku_items.map(it=>`
-      <div class="movement-row">
-        <div><div style="font-weight:500;">${esc(it.nom)}</div>
-        <div class="sub">${esc(it.categorie)} · seuil > ${st_fmtNum(Number(it.seuil)||0)} ${esc(it.unite||'')}${it.assignedTo&&it.assignedTo.length?' · '+esc(it.assignedTo.join(', ')):' · non assigné'}</div></div>
-        <div style="display:flex;gap:10px;">
-          <button class="x-btn" style="color:var(--forest);font-size:12px;" onclick="ku_openItemForm('${it.id}')">✏️</button>
-          <button class="x-btn" onclick="ku_deleteItem('${it.id}')">🗑</button>
-        </div>
-      </div>
-    `).join('')}
-  </div>`;
-
-  return `${bulkImportBox}<div class="ticket" style="background:var(--paper);margin-top:12px;">${openForm}${list}</div>`;
-}
-async function ku_bulkImport(){
-  const raw = document.getElementById('ku-bulk-text').value || '';
-  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
-  if(lines.length===0){ alert('Collez au moins une ligne.'); return; }
-  let count = 0;
-  for(const line of lines){
-    const parts = line.split('|').map(p=>p.trim());
-    const nom = parts[0];
-    if(!nom) continue;
-    const catRaw = (parts[1]||'Ingrédient').toLowerCase();
-    const categorie = catRaw.startsWith('pr') ? 'Préparation' : 'Ingrédient';
-    const seuil = parts[2] ? ku_parseNum(parts[2]) : 0;
-    const unite = parts[3] || '';
-    await ku_itemsCol.doc(uid()).set({ nom, categorie, seuil, unite, assignedTo: [] });
-    count++;
-  }
-  ku_bulkText = '';
-  ku_showBulkImport = false;
-  alert(`${count} article(s) importé(s). Assignez-les ensuite à vos cuisiniers en modifiant chaque article.`);
-  cu_render();
-}
-function ku_openItemForm(id){
-  ku_editingItemId = id || null;
-  ku_showItemForm = true;
-  const editing = id ? ku_items.find(it=>it.id===id) : null;
-  ku_itemForm = editing
-    ? { nom: editing.nom, categorie: editing.categorie, seuil: editing.seuil!=null?editing.seuil:'', unite: editing.unite||'', assignedTo: (editing.assignedTo||[]).slice() }
-    : { nom:'', categorie:'Ingrédient', seuil:'', unite:'', assignedTo: [] };
-  cu_render();
-}
-function ku_closeItemForm(){ ku_showItemForm = false; ku_editingItemId = null; cu_render(); }
-function ku_toggleAssign(username, checked){
-  const nomEl = document.getElementById('ku-if-nom');
-  const seuilEl = document.getElementById('ku-if-seuil');
-  const uniteEl = document.getElementById('ku-if-unite');
-  if(nomEl) ku_itemForm.nom = nomEl.value;
-  if(seuilEl) ku_itemForm.seuil = seuilEl.value;
-  if(uniteEl) ku_itemForm.unite = uniteEl.value;
-  if(checked){ if(!ku_itemForm.assignedTo.includes(username)) ku_itemForm.assignedTo.push(username); }
-  else { ku_itemForm.assignedTo = ku_itemForm.assignedTo.filter(u=>u!==username); }
-  cu_render();
-}
-async function ku_saveItem(){
-  const nom = (document.getElementById('ku-if-nom').value||'').trim();
-  if(!nom){ alert('Merci de renseigner un nom.'); return; }
-  const seuil = ku_parseNum(document.getElementById('ku-if-seuil').value);
-  const unite = document.getElementById('ku-if-unite').value.trim();
-  const data = { nom, categorie: ku_itemForm.categorie, seuil, unite, assignedTo: ku_itemForm.assignedTo };
-  if(ku_editingItemId) await ku_itemsCol.doc(ku_editingItemId).set(data, { merge:true });
-  else await ku_itemsCol.doc(uid()).set(data);
-  ku_showItemForm = false; ku_editingItemId = null;
-  cu_render();
-}
-async function ku_deleteItem(id){
-  if(!confirm('Supprimer cet article de la checklist ?')) return;
-  await ku_itemsCol.doc(id).delete();
-}
-
-/* ---------------- Onglet Mise en place (avant service) ---------------- */
-function mp_todayEntries(){
-  const doc = mp_checksByDate[cu_workingDate];
-  return (doc && doc.entries) || {};
-}
-async function mp_toggle(itemId, checked){
-  await mp_checksCol.doc(cu_workingDate).set({
-    date: cu_workingDate,
-    entries: { [itemId]: checked ? { checked:true, checkedBy: currentUser, checkedAt: new Date().toISOString() } : firebase.firestore.FieldValue.delete() }
-  }, { merge:true });
-}
-
-function mp_renderTab(){
-  const entries = mp_todayEntries();
-  const isAdmin = session && session.isAdmin;
-  const doneCount = mp_items.filter(it=>entries[it.id] && entries[it.id].checked).length;
-
-  const dateBar = `<div class="ticket" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-    <div class="field" style="flex:1;min-width:150px;margin:0;"><label>Date</label><input type="date" id="mp-date" value="${cu_workingDate}" onchange="cu_workingDate=this.value;cu_render()" /></div>
-    ${isAdmin ? `<button class="btn ghost small" onclick="mp_manageMode=!mp_manageMode;cu_render()">${mp_manageMode?'Terminer':'⚙️ Gérer la liste'}</button>` : ''}
-  </div>`;
-
-  const manageBox = (isAdmin && mp_manageMode) ? `
-    <div class="ticket" style="border:2px solid var(--forest);background:var(--moss-bg);">
-      <div class="row-between" style="margin-bottom:${mp_showBulkImport?'10px':'0'};">
-        <div style="font-size:14px;font-weight:800;color:var(--forest);">📋 Import en masse (recommandé)</div>
-        <button class="btn moss small" onclick="mp_showBulkImport=!mp_showBulkImport;cu_render()">${mp_showBulkImport?'Fermer':'Ouvrir'}</button>
-      </div>
-      ${mp_showBulkImport ? `
-        <div style="font-size:11.5px;color:var(--ink-muted);margin-bottom:8px;">Un élément par ligne.</div>
-        <textarea id="mp-bulk-text" rows="8" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:'IBM Plex Mono',monospace;" placeholder="Cuire le riz&#10;Découper le saumon">${esc(mp_bulkText)}</textarea>
-        <button class="btn moss" style="margin-top:10px;" onclick="mp_bulkImport()">📋 Importer ces éléments</button>
-      ` : ''}
-    </div>
-    <div class="ticket" style="background:var(--paper);margin-top:12px;">
-      <div class="grid grid-2" style="margin-bottom:8px;">
-        <input type="text" id="mp-new-item" placeholder="Ex. Préparer le riz, sortir le poisson…" value="${esc(mp_newItemNom)}" oninput="mp_newItemNom=this.value" style="grid-column:1/-1;" />
-      </div>
-      <button class="btn moss" onclick="mp_addItem()">+ Ajouter à la liste</button>
-      <div style="margin-top:12px;">
-        ${mp_items.map(it=>`
-          <div class="movement-row">
-            <div style="font-weight:500;">${esc(it.nom)}</div>
-            <button class="x-btn" onclick="mp_deleteItem('${it.id}')">🗑</button>
-          </div>
-        `).join('') || `<p style="font-size:12px;color:var(--ink-muted);">Aucun élément pour l'instant.</p>`}
-      </div>
-    </div>
-  ` : '';
-
-  const progress = mp_items.length>0 ? `<div class="result-box ${doneCount===mp_items.length?'final':'prelim'}" style="margin:10px 0 14px;">
-    <div class="label">Mise en place — ${fmtDateShort(cu_workingDate)}</div>
-    <div class="value" style="font-size:17px;">${doneCount} / ${mp_items.length}</div>
-  </div>` : '';
-
-  const list = mp_items.length===0
-    ? `<div class="empty-state">${isAdmin ? "Aucun élément dans la liste. Ajoutez-en via « Gérer la liste »." : "Aucun élément de mise en place défini pour l'instant."}</div>`
-    : mp_items.map(it=>{
-      const entry = entries[it.id];
-      const checked = entry && entry.checked;
-      return `<label class="movement-row" style="cursor:pointer;${checked?'opacity:0.6;':''}">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <input type="checkbox" style="width:18px;height:18px;" ${checked?'checked':''} onchange="mp_toggle('${it.id}',this.checked)" />
-          <div>
-            <div style="font-weight:500;text-decoration:${checked?'line-through':'none'};">${esc(it.nom)}</div>
-            ${checked?`<div class="sub">✓ par ${esc(entry.checkedBy||'')}</div>`:''}
-          </div>
-        </div>
-      </label>`;
-    }).join('');
-
-  return dateBar + manageBox + progress + list;
-}
-function mp_addItem(){
-  const nom = (mp_newItemNom||'').trim();
-  if(!nom) return;
-  mp_itemsCol.doc(uid()).set({ nom, ordre: mp_items.length });
-  mp_newItemNom = '';
-  cu_render();
-}
-async function mp_bulkImport(){
-  const raw = document.getElementById('mp-bulk-text').value || '';
-  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
-  if(lines.length===0){ alert('Collez au moins une ligne.'); return; }
-  let count = mp_items.length;
-  for(const nom of lines){
-    await mp_itemsCol.doc(uid()).set({ nom, ordre: count });
-    count++;
-  }
-  mp_bulkText = '';
-  mp_showBulkImport = false;
-  alert(`${lines.length} élément(s) importé(s).`);
-  cu_render();
-}
-async function mp_deleteItem(id){
-  if(!confirm('Supprimer cet élément de la mise en place ?')) return;
-  await mp_itemsCol.doc(id).delete();
-}
 
 initAuth();
 </script>
